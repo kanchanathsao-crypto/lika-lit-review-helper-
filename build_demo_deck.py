@@ -89,7 +89,44 @@ def timebadge(tc,accent):
             tbox(9950000,520000,w,250000,[[("⏱ TIMECODE",8,CYAN,True,False)]],align="ctr")+
             tbox(9950000,740000,w,260000,[[(tc,13,accent,True,False)]],align="ctr"))
 
-def slide(shapes,bg=NAVY2):
+# transition ระหว่างสไลด์ (สลับ fade / push ตามลำดับ)
+def transition_xml(kind="fade"):
+    if kind=="push":
+        return '<p:transition spd="med" p14:dur="700" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"><p:push dir="l"/></p:transition>'
+    if kind=="wipe":
+        return '<p:transition spd="med" p14:dur="700" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"><p:wipe dir="l"/></p:transition>'
+    return '<p:transition spd="med" p14:dur="600" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"><p:fade/></p:transition>'
+
+# timing tree: ชิ้นงาน (anim_ids) ทยอยปรากฏแบบ fade-in อัตโนมัติ (After Previous)
+# ใช้ animEffect fade เข้า — เป็น animation มาตรฐานที่ PowerPoint รองรับและไฟล์ไม่เสีย
+def timing_xml(anim_ids):
+    if not anim_ids: return ""
+    effects=""
+    for i,sid in enumerate(anim_ids):
+        delay = 0 if i==0 else 300  # ชิ้นแรกเริ่มเมื่อเข้าสไลด์ ชิ้นถัดไปหน่วง 0.3s หลังชิ้นก่อน
+        effects+=(
+            '<p:par><p:cTn presetID="10" presetClass="entr" presetSubtype="0" fill="hold" grpId="0" nodeType="afterEffect">'
+            f'<p:stCondLst><p:cond delay="{delay}"/></p:stCondLst><p:childTnLst>'
+            '<p:set><p:cBhvr><p:cTn dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn>'
+            f'<p:tgtEl><p:spTgt spid="{sid}"/></p:tgtEl>'
+            '<p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr>'
+            '<p:to><p:strVal val="visible"/></p:to></p:set>'
+            '<p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn dur="500"/>'
+            f'<p:tgtEl><p:spTgt spid="{sid}"/></p:tgtEl></p:cBhvr></p:animEffect>'
+            '</p:childTnLst></p:cTn></p:par>'
+        )
+    bld=''.join(f'<p:bldP spid="{sid}" grpId="0"/>' for sid in anim_ids)
+    return (
+        '<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot">'
+        '<p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq">'
+        f'<p:childTnLst>{effects}</p:childTnLst></p:cTn>'
+        '<p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>'
+        '<p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst>'
+        '</p:seq></p:childTnLst></p:cTn></p:par></p:tnLst>'
+        f'<p:bldLst>{bld}</p:bldLst></p:timing>'
+    )
+
+def slide(shapes,bg=NAVY2,trans="fade",anim_ids=None):
     return (f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
             f'<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" '
             f'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '
@@ -98,6 +135,8 @@ def slide(shapes,bg=NAVY2):
             f'<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
             f'<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
             f'{"".join(shapes)}</p:spTree></p:cSld>'
+            f'{transition_xml(trans)}'
+            f'{timing_xml(anim_ids or [])}'
             f'<p:clrMapOvr><a:overrideClrMapping bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" '
             f'accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" '
             f'hlink="hlink" folHlink="folHlink"/></p:clrMapOvr></p:sld>')
@@ -136,9 +175,17 @@ def header(kicker,title,page,total,accent=GOLD):
 def bullets(x,y,w,items,size=13,gap=540000,color=WHITE,mark="▸",mc=GOLD):
     return [tbox(x,y+i*gap,w,gap,[[(f"{mark} ",12,mc,True,False),(it,size,color,False,False)]]) for i,it in enumerate(items)]
 
+import re as _re
+def first_id(shape_str):
+    m=_re.search(r'<p:cNvPr id="(\d+)"', shape_str)
+    return m.group(1) if m else None
+
 slides=[]; notes=[]
-def add(sp, note=""):
-    slides.append(slide(sp)); notes.append(note)
+_trans_cycle=["fade","push","fade","wipe","fade","push","fade"]
+def add(sp, note="", anim_ids=None):
+    idx=len(slides)
+    tr=_trans_cycle[idx % len(_trans_cycle)]
+    slides.append(slide(sp, trans=tr, anim_ids=anim_ids)); notes.append(note)
 
 TOTAL=7
 
@@ -163,14 +210,16 @@ add(sp, "ช่วงที่ 1 · เปิดตัว (0:00-0:30)\n\nบท�
 # ====== 2 · PROBLEM (0:30-1:15) ======
 sp=header("① PROBLEM — ปัญหา","การทบทวนวรรณกรรมใช้เวลานานมาก",2,TOTAL,accent=RED)
 sp.append(timebadge("0:30–1:15",RED))
-sp.append(icon_badge(9850000,2300000,1300000,"⏳",bg=NAVY3,ring=RED))
-sp+=bullets(760000,2300000,8700000,[
+ic2=icon_badge(9850000,2300000,1300000,"⏳",bg=NAVY3,ring=RED); sp.append(ic2)
+blist=bullets(760000,2300000,8700000,[
     "ต้องอ่านงานวิจัยจำนวนมากทีละฉบับ ใช้เวลาหลายวัน–หลายสัปดาห์",
     "สายวิทยาศาสตร์/การแพทย์มีเปเปอร์มหาศาลและเพิ่มขึ้นต่อเนื่อง",
     "ต้องสกัดประเด็น เปรียบเทียบระเบียบวิธี และเขียนเองทั้งหมด",
     "เครื่องมือที่มีมักเสียเงิน ซับซ้อน หรือเสี่ยงต่อความลับข้อมูล",
 ], size=13.5, gap=720000)
-add(sp, "ช่วงที่ 2 · Problem (0:30-1:15)\n\nบทพากย์:\n\"ปัญหาที่พบคือ การทำ Literature Review ใช้เวลานานมาก โดยเฉพาะสายวิทยาศาสตร์และการแพทย์ที่มีงานวิจัยจำนวนมาก ผู้วิจัยต้องอ่านทีละฉบับ สกัดประเด็น เปรียบเทียบระเบียบวิธี และเขียนเองทั้งหมด ขณะที่เครื่องมือที่มีอยู่มักเสียเงิน ซับซ้อน หรือต้องอัปโหลดเอกสารขึ้นระบบภายนอก เสี่ยงต่อความลับของงานวิจัยที่ยังไม่เผยแพร่ค่ะ\"")
+sp+=blist
+anim2=[first_id(ic2)]+[first_id(b) for b in blist]
+add(sp, anim_ids=anim2, note="ช่วงที่ 2 · Problem (0:30-1:15)\n\nบทพากย์:\n\"ปัญหาที่พบคือ การทำ Literature Review ใช้เวลานานมาก โดยเฉพาะสายวิทยาศาสตร์และการแพทย์ที่มีงานวิจัยจำนวนมาก ผู้วิจัยต้องอ่านทีละฉบับ สกัดประเด็น เปรียบเทียบระเบียบวิธี และเขียนเองทั้งหมด ขณะที่เครื่องมือที่มีอยู่มักเสียเงิน ซับซ้อน หรือต้องอัปโหลดเอกสารขึ้นระบบภายนอก เสี่ยงต่อความลับของงานวิจัยที่ยังไม่เผยแพร่ค่ะ\"")
 
 # ====== 3 · SOLUTION (1:15-2:00) ======
 sp=header("② SOLUTION — แนวคิด","เว็บผู้ช่วยทบทวนวรรณกรรมอัตโนมัติ",3,TOTAL,accent=GOLD)
@@ -179,18 +228,20 @@ feats=[("📄","รับไฟล์หลายฉบับ","อัปโห�
        ("📊","เปรียบเทียบ","ตารางระเบียบวิธี 5 ประเด็น",CYAN),
        ("🕸️","กราฟ 3 มิติ","เชื่อมโยงงานวิจัย + ค้นหา",EMER),
        ("✍️","ร่าง + APA","บททบทวนพร้อมอ้างอิง แก้ไขได้",VIOLET)]
+anim3=[]
 for i,(ic,t,d,c) in enumerate(feats):
     cx=760000+(i%2)*5550000; cy=2150000+(i//2)*1500000
-    sp.append(rrect(cx,cy,5300000,1320000,NAVY3,line=c,lw=9525,r=14000,shadow=True))
+    card=rrect(cx,cy,5300000,1320000,NAVY3,line=c,lw=9525,r=14000,shadow=True); sp.append(card)
+    anim3.append(first_id(card))
     sp.append(icon_badge(cx+180000,cy+230000,860000,ic,bg=NAVY,ring=c))
     sp.append(tbox(cx+1200000,cy+230000,3950000,420000,[[(t,14,c,True,False)]]))
     sp.append(tbox(cx+1200000,cy+680000,3950000,560000,[[(d,11.5,WHITE,False,False)]]))
-add(sp, "ช่วงที่ 3 · Solution (1:15-2:00)\n\nบทพากย์:\n\"LIKA Nexus แก้ปัญหานี้ด้วยการรวมงานวิจัยหลายฉบับไว้ในระบบเดียว เพียงอัปโหลดไฟล์ ระบบจะสรุปให้ 5 ประเด็น คือ วัตถุประสงค์ กลุ่มตัวอย่าง ระเบียบวิธี ผลการศึกษา และข้อจำกัด แล้วแสดงผลเป็นกราฟความรู้ 3 มิติ ตารางเปรียบเทียบ และร่างบททบทวนวรรณกรรมพร้อมอ้างอิง จุดเด่นคือประมวลผลในเบราว์เซอร์ ไม่ส่งไฟล์ออกนอกเครื่องค่ะ\"")
+add(sp, anim_ids=anim3, note="ช่วงที่ 3 · Solution (1:15-2:00)\n\nบทพากย์:\n\"LIKA Nexus แก้ปัญหานี้ด้วยการรวมงานวิจัยหลายฉบับไว้ในระบบเดียว เพียงอัปโหลดไฟล์ ระบบจะสรุปให้ 5 ประเด็น คือ วัตถุประสงค์ กลุ่มตัวอย่าง ระเบียบวิธี ผลการศึกษา และข้อจำกัด แล้วแสดงผลเป็นกราฟความรู้ 3 มิติ ตารางเปรียบเทียบ และร่างบททบทวนวรรณกรรมพร้อมอ้างอิง จุดเด่นคือประมวลผลในเบราว์เซอร์ ไม่ส่งไฟล์ออกนอกเครื่องค่ะ\"")
 
 # ====== 4 · AI/KIRO (2:00-2:40) ======
 sp=header("③ AI / KIRO","เทคโนโลยีเบื้องหลัง",4,TOTAL,accent=CYAN)
 sp.append(timebadge("2:00–2:40",CYAN))
-sp.append(rrect(760000,2050000,5250000,3300000,NAVY3,line=CYAN,lw=12700,shadow=True))
+card_ai=rrect(760000,2050000,5250000,3300000,NAVY3,line=CYAN,lw=12700,shadow=True); sp.append(card_ai)
 sp.append(icon_badge(760000+2150000,2220000,860000,"🤖",bg=NAVY,ring=CYAN))
 sp.append(tbox(960000,3130000,4900000,400000,[[("AI",14,CYAN,True,False)]],align="ctr"))
 sp+=bullets(1000000,3560000,4800000,[
@@ -198,7 +249,7 @@ sp+=bullets(1000000,3560000,4800000,[
     "จำแนก 22 สาขา + ระเบียบวิธี",
     "รองรับไทย–อังกฤษ",
 ], size=12, gap=540000)
-sp.append(rrect(6260000,2050000,5200000,3300000,NAVY3,line=GOLD,lw=12700,shadow=True))
+card_kiro=rrect(6260000,2050000,5200000,3300000,NAVY3,line=GOLD,lw=12700,shadow=True); sp.append(card_kiro)
 sp.append(icon_badge(6260000+2170000,2220000,860000,"⚙️",bg=NAVY,ring=GOLD))
 sp.append(tbox(6460000,3130000,4800000,400000,[[("Kiro (Spec-driven)",14,GOLD,True,False)]],align="ctr"))
 sp+=bullets(6500000,3560000,4800000,[
@@ -206,7 +257,7 @@ sp+=bullets(6500000,3560000,4800000,[
     "Specs — ข้อกำหนด",
     "Kiro เขียนโค้ด ทดสอบ และ deploy",
 ], size=12, gap=540000)
-add(sp, "ช่วงที่ 4 · AI / Kiro (2:00-2:40)\n\nบทพากย์:\n\"ด้าน AI ระบบวิเคราะห์เอกสารตามโครงสร้างงานวิจัย จำแนกได้ 22 สาขาและระเบียบวิธี รองรับทั้งภาษาไทยและอังกฤษ ส่วนการพัฒนาเราใช้ Kiro เป็นเครื่องมือหลักแบบ Spec-driven เริ่มจากกำหนดกฎใน Steering ออกแบบข้อกำหนดใน Specs แล้วให้ Kiro ช่วยเขียนโค้ด ทดสอบ และนำขึ้นใช้งานจริง ตรวจสอบย้อนกลับได้ค่ะ\"")
+add(sp, anim_ids=[first_id(card_ai),first_id(card_kiro)], note="ช่วงที่ 4 · AI / Kiro (2:00-2:40)\n\nบทพากย์:\n\"ด้าน AI ระบบวิเคราะห์เอกสารตามโครงสร้างงานวิจัย จำแนกได้ 22 สาขาและระเบียบวิธี รองรับทั้งภาษาไทยและอังกฤษ ส่วนการพัฒนาเราใช้ Kiro เป็นเครื่องมือหลักแบบ Spec-driven เริ่มจากกำหนดกฎใน Steering ออกแบบข้อกำหนดใน Specs แล้วให้ Kiro ช่วยเขียนโค้ด ทดสอบ และนำขึ้นใช้งานจริง ตรวจสอบย้อนกลับได้ค่ะ\"")
 
 # ====== 5 · PROTOTYPE (2:40-4:15) ======
 sp=header("④ PROTOTYPE — สาธิตสด","อัดหน้าจอเว็บจริง (ช่วงสำคัญที่สุด)",5,TOTAL,accent=EMER)
@@ -237,12 +288,14 @@ stats=[("หลายวัน→นาที","ลดเวลาทบทว�
        ("22 สาขา","วิทย์ · สังคม · มนุษยศาสตร์",CYAN),
        ("Privacy-first","ประมวลผลในเครื่อง ปลอดภัย",EMER),
        ("ต่อยอดได้","สืบค้นออนไลน์ · เชื่อมระบบห้องสมุด",VIOLET)]
+anim6=[]
 for i,(n,d,c) in enumerate(stats):
     cx=760000+(i%2)*5550000; cy=2150000+(i//2)*1450000
-    sp.append(rrect(cx,cy,5300000,1280000,NAVY3,line=c,lw=9525,r=14000,shadow=True))
+    card=rrect(cx,cy,5300000,1280000,NAVY3,line=c,lw=9525,r=14000,shadow=True); sp.append(card)
+    anim6.append(first_id(card))
     sp.append(tbox(cx+250000,cy+220000,4800000,560000,[[(n,19,c,True,False)]]))
     sp.append(tbox(cx+250000,cy+820000,4800000,420000,[[(d,12,WHITE,False,False)]]))
-add(sp, "ช่วงที่ 6 · Expected Impact (4:15-4:50)\n\nบทพากย์:\n\"ผลลัพธ์ที่คาดหวังคือ ลดเวลาการทบทวนวรรณกรรมจากหลายวันเหลือไม่กี่นาที ช่วยงานวิจัยของอาจารย์ นักศึกษา และงานบริการของบรรณารักษ์ ระบบใช้ฟรี ไม่ต้องติดตั้ง ปลอดภัยด้วยการประมวลผลในเครื่อง รองรับ 22 สาขา และต่อยอดได้ เช่น การสืบค้นออนไลน์และเชื่อมระบบห้องสมุดในอนาคตค่ะ\"")
+add(sp, anim_ids=anim6, note="ช่วงที่ 6 · Expected Impact (4:15-4:50)\n\nบทพากย์:\n\"ผลลัพธ์ที่คาดหวังคือ ลดเวลาการทบทวนวรรณกรรมจากหลายวันเหลือไม่กี่นาที ช่วยงานวิจัยของอาจารย์ นักศึกษา และงานบริการของบรรณารักษ์ ระบบใช้ฟรี ไม่ต้องติดตั้ง ปลอดภัยด้วยการประมวลผลในเครื่อง รองรับ 22 สาขา และต่อยอดได้ เช่น การสืบค้นออนไลน์และเชื่อมระบบห้องสมุดในอนาคตค่ะ\"")
 
 # ====== 7 · CLOSING (4:50-5:00) ======
 sp=starfield(34,seed=11)
