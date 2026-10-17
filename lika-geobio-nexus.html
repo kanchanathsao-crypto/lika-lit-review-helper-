@@ -68,11 +68,16 @@
     <div class="flex items-center gap-2">
       <button id="tab-explorer" class="tab-active chip text-xs px-4 py-2 rounded-lg">⬡ 3D Knowledge Explorer</button>
       <button id="tab-catalog" class="glass chip text-xs px-4 py-2 rounded-lg text-cyan-100">⚙ AI Auto-Cataloger</button>
+      <button id="tab-dashboard" class="glass chip text-xs px-4 py-2 rounded-lg text-cyan-100">📊 Usage Dashboard</button>
     </div>
 
     <div class="flex items-center gap-2 text-[11px]">
+      <span id="user-chip" class="glass px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 cursor-pointer hover:bg-white/10">
+        <span id="user-avatar" class="h-5 w-5 rounded-full bg-gold/30 text-gold flex items-center justify-center text-[10px] font-bold">?</span>
+        <span id="user-label" class="text-cyan-100">ยังไม่เข้าสู่ระบบ</span>
+      </span>
       <span class="glass px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-400 pulse-dot"></span> Kiro Agent: <span id="agent-latency" class="text-emerald-300 font-semibold">Active</span></span>
-      <span class="glass px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 text-cyan-200">◆ Kiro Specs <span class="text-emerald-300 font-semibold">100% Pass</span></span>
+      <span class="hidden xl:inline-flex glass px-3 py-1.5 rounded-lg items-center gap-1.5 text-cyan-200">◆ Kiro Specs <span class="text-emerald-300 font-semibold">100% Pass</span></span>
     </div>
   </header>
 
@@ -169,6 +174,47 @@
           <span class="text-cyan-200/50">อัปโหลดงานวิจัยเพื่อให้ระบบร่างบททบทวนวรรณกรรมอัตโนมัติ…</span>
         </div>
       </section>
+
+      <!-- Dashboard view -->
+      <section id="view-dashboard" class="h-full glass-d rounded-xl p-5 overflow-y-auto scroll-thin hidden">
+        <div class="flex items-center justify-between mb-1">
+          <h2 class="text-sm font-semibold text-gold">📊 Usage Dashboard — สถิติผู้เข้าใช้บริการ</h2>
+          <button id="btn-reset-stats" class="glass chip text-[10px] px-2.5 py-1.5 rounded-lg text-cyan-200">⟳ ล้างสถิติ</button>
+        </div>
+        <p class="text-[11px] text-cyan-200/60 mb-4">บันทึกการเข้าใช้แยกตามประเภทผู้ใช้ (บันทึกในเครื่องนี้ · localStorage)</p>
+
+        <!-- Stat cards -->
+        <div id="stat-cards" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5"></div>
+
+        <div class="grid lg:grid-cols-2 gap-4">
+          <!-- Donut: by type -->
+          <div class="glass rounded-xl p-4">
+            <h3 class="text-xs font-semibold text-cyan-node mb-3">สัดส่วนตามประเภทผู้ใช้</h3>
+            <div class="flex items-center gap-4">
+              <svg id="donut" viewBox="0 0 120 120" class="w-32 h-32 shrink-0"></svg>
+              <div id="donut-legend" class="text-[11px] space-y-1.5 flex-1"></div>
+            </div>
+          </div>
+          <!-- Bar: last 7 days -->
+          <div class="glass rounded-xl p-4">
+            <h3 class="text-xs font-semibold text-cyan-node mb-3">การเข้าใช้ย้อนหลัง 7 วัน</h3>
+            <div id="bar-chart" class="flex items-end justify-between gap-1.5 h-32"></div>
+          </div>
+        </div>
+
+        <!-- Recent log -->
+        <div class="glass rounded-xl p-4 mt-4">
+          <h3 class="text-xs font-semibold text-cyan-node mb-2">บันทึกการเข้าใช้ล่าสุด</h3>
+          <div class="overflow-x-auto scroll-thin">
+            <table class="min-w-full text-[11px]">
+              <thead><tr class="text-left text-cyan-200/70 border-b border-cyan-node/20">
+                <th class="p-2">เวลา</th><th class="p-2">ประเภท</th><th class="p-2">ชื่อ / รหัส</th>
+              </tr></thead>
+              <tbody id="log-body" class="divide-y divide-white/5"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- ===== RIGHT: Detail panel ===== -->
@@ -181,6 +227,39 @@
         <div id="detail-content" class="hidden"></div>
       </section>
     </aside>
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div id="login-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70">
+  <div class="glass-d rounded-2xl max-w-md w-full p-6">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="font-semibold text-gold inline-flex items-center gap-2">🔑 เข้าสู่ระบบผู้ใช้บริการ</h3>
+      <button id="login-close" class="text-cyan-200/70 hover:text-white text-2xl leading-none">×</button>
+    </div>
+    <p class="text-[11px] text-cyan-200/60 mb-4">เลือกประเภทผู้ใช้เพื่อบันทึกสถิติการเข้าใช้บริการห้องสมุด</p>
+
+    <div class="grid grid-cols-3 gap-2 mb-4">
+      <button class="role-btn glass chip rounded-xl p-3 flex flex-col items-center gap-1 border border-transparent" data-role="อาจารย์">
+        <span class="text-2xl">👩‍🏫</span><span class="text-[11px] font-semibold">อาจารย์</span>
+      </button>
+      <button class="role-btn glass chip rounded-xl p-3 flex flex-col items-center gap-1 border border-transparent" data-role="เจ้าหน้าที่">
+        <span class="text-2xl">🧑‍💼</span><span class="text-[11px] font-semibold">เจ้าหน้าที่</span>
+      </button>
+      <button class="role-btn glass chip rounded-xl p-3 flex flex-col items-center gap-1 border border-transparent" data-role="นักศึกษา">
+        <span class="text-2xl">🧑‍🎓</span><span class="text-[11px] font-semibold">นักศึกษา</span>
+      </button>
+    </div>
+
+    <label class="block text-[11px] text-cyan-200/70 mb-1">ชื่อ / รหัส (ไม่บังคับ)</label>
+    <input id="login-name" type="text" placeholder="เช่น สมชาย ใจดี หรือ 6512345"
+      class="w-full glass rounded-lg px-3 py-2.5 text-xs placeholder:text-cyan-200/40 focus:outline-none focus:ring-2 focus:ring-cyan-node/50 mb-2" />
+    <p id="login-hint" class="text-[11px] text-orange-300 mb-3 h-4"></p>
+
+    <div class="flex gap-2">
+      <button id="login-submit" class="flex-1 bg-gold text-slate-deep font-semibold px-4 py-2.5 rounded-lg text-sm">เข้าสู่ระบบ &amp; บันทึกการเข้าใช้</button>
+      <button id="logout-btn" class="glass chip px-4 py-2.5 rounded-lg text-sm text-cyan-200 hidden">ออกจากระบบ</button>
+    </div>
   </div>
 </div>
 
@@ -650,10 +729,120 @@ async function copyText(t,btn,done){ try{ await navigator.clipboard.writeText(t)
 function openModal(){ renderAPA(); const m=document.getElementById('apa-modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
 function closeModal(){ const m=document.getElementById('apa-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
 function switchTab(which){
-  const ex=document.getElementById('view-explorer'), ca=document.getElementById('view-catalog');
-  const te=document.getElementById('tab-explorer'), tc=document.getElementById('tab-catalog');
-  if(which==='explorer'){ ex.classList.remove('hidden'); ca.classList.add('hidden'); te.classList.add('tab-active'); te.classList.remove('glass','text-cyan-100'); tc.classList.remove('tab-active'); tc.classList.add('glass','text-cyan-100'); setTimeout(onResize,50); }
-  else{ ca.classList.remove('hidden'); ex.classList.add('hidden'); tc.classList.add('tab-active'); tc.classList.remove('glass','text-cyan-100'); te.classList.remove('tab-active'); te.classList.add('glass','text-cyan-100'); }
+  const views={explorer:'view-explorer',catalog:'view-catalog',dashboard:'view-dashboard'};
+  const tabs={explorer:'tab-explorer',catalog:'tab-catalog',dashboard:'tab-dashboard'};
+  Object.entries(views).forEach(([k,id])=>document.getElementById(id).classList.toggle('hidden',k!==which));
+  Object.entries(tabs).forEach(([k,id])=>{ const el=document.getElementById(id);
+    if(k===which){ el.classList.add('tab-active'); el.classList.remove('glass','text-cyan-100'); }
+    else{ el.classList.remove('tab-active'); el.classList.add('glass','text-cyan-100'); } });
+  if(which==='explorer') setTimeout(onResize,50);
+  if(which==='dashboard') renderDashboard();
+}
+
+/* ========================= Login + Usage statistics ========================= */
+const ROLE_META={ 'อาจารย์':{color:'#f5c542',icon:'👩‍🏫'}, 'เจ้าหน้าที่':{color:'#22d3ee',icon:'🧑‍💼'}, 'นักศึกษา':{color:'#34d399',icon:'🧑‍🎓'} };
+let selectedRole=null, currentUser=null;
+const LS_LOG='lika_usage_log', LS_USER='lika_current_user';
+
+function loadLog(){ try{ return JSON.parse(localStorage.getItem(LS_LOG)||'[]'); }catch{ return []; } }
+function saveLog(log){ localStorage.setItem(LS_LOG, JSON.stringify(log)); }
+
+function openLogin(){
+  const m=document.getElementById('login-modal'); m.classList.remove('hidden'); m.classList.add('flex');
+  document.getElementById('logout-btn').classList.toggle('hidden', !currentUser);
+}
+function closeLogin(){ const m=document.getElementById('login-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+function doLogin(){
+  const hint=document.getElementById('login-hint');
+  if(!selectedRole){ hint.textContent='กรุณาเลือกประเภทผู้ใช้ก่อน'; return; }
+  const name=document.getElementById('login-name').value.trim();
+  const entry={ role:selectedRole, name:name||'(ไม่ระบุ)', ts:Date.now() };
+  const log=loadLog(); log.push(entry); saveLog(log);
+  currentUser={ role:selectedRole, name:entry.name };
+  localStorage.setItem(LS_USER, JSON.stringify(currentUser));
+  updateUserChip(); closeLogin(); renderDashboard();
+  document.getElementById('agent-latency'); // noop
+}
+function doLogout(){ currentUser=null; localStorage.removeItem(LS_USER); updateUserChip(); closeLogin(); }
+
+function updateUserChip(){
+  const av=document.getElementById('user-avatar'), lb=document.getElementById('user-label');
+  if(currentUser){ const meta=ROLE_META[currentUser.role]||{icon:'•'}; av.textContent=meta.icon; av.style.background='transparent';
+    lb.textContent=`${currentUser.role}${currentUser.name&&currentUser.name!=='(ไม่ระบุ)'?' · '+currentUser.name:''}`; }
+  else { av.textContent='?'; lb.textContent='เข้าสู่ระบบ'; }
+}
+
+function renderStatCards(log){
+  const byRole={}; Object.keys(ROLE_META).forEach(r=>byRole[r]=0);
+  log.forEach(e=>{ if(byRole[e.role]!=null) byRole[e.role]++; });
+  const total=log.length;
+  const cards=[['รวมทั้งหมด',total,'#f5c542','📈'],
+    ['อาจารย์',byRole['อาจารย์'],ROLE_META['อาจารย์'].color,'👩‍🏫'],
+    ['เจ้าหน้าที่',byRole['เจ้าหน้าที่'],ROLE_META['เจ้าหน้าที่'].color,'🧑‍💼'],
+    ['นักศึกษา',byRole['นักศึกษา'],ROLE_META['นักศึกษา'].color,'🧑‍🎓']];
+  document.getElementById('stat-cards').innerHTML=cards.map(([l,v,c,ic])=>`
+    <div class="glass rounded-xl p-4">
+      <div class="flex items-center justify-between mb-1"><span class="text-xl">${ic}</span>
+        <span class="h-2.5 w-2.5 rounded-full" style="background:${c};box-shadow:0 0 8px ${c}"></span></div>
+      <div class="text-2xl font-bold" style="color:${c}">${v}</div>
+      <div class="text-[11px] text-cyan-200/60">${l}</div>
+    </div>`).join('');
+  return byRole;
+}
+
+function renderDonut(byRole){
+  const total=Object.values(byRole).reduce((a,b)=>a+b,0);
+  const svg=document.getElementById('donut'), leg=document.getElementById('donut-legend');
+  if(!total){ svg.innerHTML='<circle cx="60" cy="60" r="46" fill="none" stroke="#1e293b" stroke-width="14"/>';
+    leg.innerHTML='<p class="text-cyan-200/50">ยังไม่มีข้อมูล</p>'; return; }
+  let off=0, parts='', C=2*Math.PI*46;
+  leg.innerHTML='';
+  Object.entries(byRole).forEach(([role,v])=>{
+    if(!v) return; const frac=v/total, len=frac*C; const meta=ROLE_META[role];
+    parts+=`<circle cx="60" cy="60" r="46" fill="none" stroke="${meta.color}" stroke-width="14"
+      stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`;
+    off+=len;
+    leg.innerHTML+=`<div class="flex items-center justify-between"><span class="inline-flex items-center gap-1.5">
+      <span class="h-2.5 w-2.5 rounded-full" style="background:${meta.color}"></span>${meta.icon} ${role}</span>
+      <span class="font-semibold" style="color:${meta.color}">${v} · ${Math.round(frac*100)}%</span></div>`;
+  });
+  svg.innerHTML=`<circle cx="60" cy="60" r="46" fill="none" stroke="#131c2e" stroke-width="14"/>${parts}
+    <text x="60" y="56" text-anchor="middle" fill="#e5edff" font-size="18" font-weight="bold">${total}</text>
+    <text x="60" y="72" text-anchor="middle" fill="#9fb3d1" font-size="8">ครั้ง</text>`;
+}
+
+function renderBar(log){
+  const days=[]; const now=new Date();
+  for(let i=6;i>=0;i--){ const d=new Date(now); d.setDate(now.getDate()-i); d.setHours(0,0,0,0); days.push(d); }
+  const counts=days.map(d=>{ const next=d.getTime()+86400000;
+    return log.filter(e=>e.ts>=d.getTime()&&e.ts<next).length; });
+  const max=Math.max(1,...counts);
+  const names=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  document.getElementById('bar-chart').innerHTML=days.map((d,i)=>{
+    const h=Math.round((counts[i]/max)*100);
+    return `<div class="flex flex-col items-center gap-1 flex-1">
+      <span class="text-[9px] text-cyan-200/70">${counts[i]||''}</span>
+      <div class="w-full rounded-t" style="height:${Math.max(h,4)}%;background:linear-gradient(180deg,#f5c542,#22d3ee);min-height:4px"></div>
+      <span class="text-[9px] text-cyan-200/50">${names[d.getDay()]}</span></div>`;
+  }).join('');
+}
+
+function renderLog(log){
+  const rows=[...log].reverse().slice(0,12);
+  document.getElementById('log-body').innerHTML=rows.length? rows.map(e=>{
+    const dt=new Date(e.ts); const meta=ROLE_META[e.role]||{color:'#9fb3d1',icon:'•'};
+    const ts=dt.toLocaleString('th-TH',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<tr class="hover:bg-white/5"><td class="p-2 text-cyan-200/70">${ts}</td>
+      <td class="p-2"><span class="inline-flex items-center gap-1" style="color:${meta.color}">${meta.icon} ${e.role}</span></td>
+      <td class="p-2 text-cyan-50/90">${e.name}</td></tr>`;
+  }).join('') : '<tr><td colspan="3" class="p-3 text-cyan-200/40">ยังไม่มีบันทึกการเข้าใช้</td></tr>';
+}
+
+function renderDashboard(){
+  const log=loadLog();
+  const byRole=renderStatCards(log);
+  renderDonut(byRole); renderBar(log); renderLog(log);
 }
 
 /* ========================= Init ========================= */
@@ -672,6 +861,26 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   document.getElementById('tab-explorer').addEventListener('click',()=>switchTab('explorer'));
   document.getElementById('tab-catalog').addEventListener('click',()=>switchTab('catalog'));
+  document.getElementById('tab-dashboard').addEventListener('click',()=>switchTab('dashboard'));
+
+  // --- Login / usage stats ---
+  try{ currentUser=JSON.parse(localStorage.getItem(LS_USER)||'null'); }catch{ currentUser=null; }
+  updateUserChip();
+  document.getElementById('user-chip').addEventListener('click',openLogin);
+  document.getElementById('login-close').addEventListener('click',closeLogin);
+  document.getElementById('login-modal').addEventListener('click',e=>{ if(e.target.id==='login-modal') closeLogin(); });
+  document.querySelectorAll('.role-btn').forEach(b=>b.addEventListener('click',()=>{
+    selectedRole=b.dataset.role;
+    document.querySelectorAll('.role-btn').forEach(x=>{ x.classList.remove('border-gold','bg-gold/10'); });
+    b.classList.add('border-gold','bg-gold/10');
+    document.getElementById('login-hint').textContent='';
+  }));
+  document.getElementById('login-submit').addEventListener('click',doLogin);
+  document.getElementById('login-name').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+  document.getElementById('logout-btn').addEventListener('click',doLogout);
+  document.getElementById('btn-reset-stats').addEventListener('click',()=>{
+    if(confirm('ยืนยันการล้างสถิติการเข้าใช้ทั้งหมดในเครื่องนี้?')){ saveLog([]); renderDashboard(); }
+  });
   document.getElementById('reset-view').addEventListener('click',()=>{ camera.position.set(0,4,46); controls.target.set(0,0,0); });
 
   const input=document.getElementById('file-input'), dz=document.getElementById('dz');
