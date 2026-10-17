@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LIKA GeoBio-Nexus — ห้องสมุดวิทยาเขตกาญจนบุรี (MUKA)</title>
+<title>LIKA Nexus — Research Knowledge Nexus · ห้องสมุดวิทยาเขตกาญจนบุรี (MUKA)</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -38,11 +38,25 @@
   [contenteditable="true"]:focus{outline:2px solid rgba(34,211,238,.5);border-radius:10px;}
   #tooltip{position:fixed;pointer-events:none;z-index:60;display:none;padding:6px 10px;font-size:12px;border-radius:8px;background:rgba(0,35,102,.95);border:1px solid rgba(34,211,238,.5);color:#e5edff;max-width:280px;}
   .spin{animation:spin .9s linear infinite;} @keyframes spin{to{transform:rotate(360deg);}}
-  .tab-active{background:linear-gradient(90deg,#f5c542,#eab308);color:#060a16;font-weight:700;}
-  .chip{transition:all .15s;} .chip:hover{transform:translateY(-1px);}
+  .tab-active{background:linear-gradient(90deg,#f5c542,#eab308);color:#060a16;font-weight:700;box-shadow:0 2px 14px rgba(245,197,66,.35);}
+  .chip{transition:all .18s cubic-bezier(.2,.8,.2,1);} .chip:hover{transform:translateY(-1px);}
   .pulse-dot{animation:pulse 1.8s infinite;} @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
   .panel-enter{animation:slideIn .35s ease;} @keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
   .dz.drag{border-color:#22d3ee;background:rgba(34,211,238,.08);}
+  /* --- Modern brand look --- */
+  .brand-word{font-weight:800;letter-spacing:.3px;}
+  .brand-grad{background:linear-gradient(92deg,#f5c542 0%,#7dd3fc 55%,#22d3ee 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .logo-nexus{position:relative;height:38px;width:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 30% 25%, #0b2a66, #061634);
+    border:1px solid rgba(34,211,238,.45);
+    box-shadow:0 0 0 1px rgba(245,197,66,.15), 0 6px 20px rgba(0,35,102,.55), inset 0 0 14px rgba(34,211,238,.18);}
+  .logo-nexus svg{filter:drop-shadow(0 0 4px rgba(34,211,238,.7));}
+  .nexus-core{animation:breathe 3s ease-in-out infinite;} @keyframes breathe{0%,100%{opacity:1}50%{opacity:.55}}
+  .glow-edge{box-shadow:0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(0,35,102,.4);}
+  .hairline{height:1px;background:linear-gradient(90deg,transparent,rgba(245,197,66,.5),rgba(34,211,238,.5),transparent);}
+  header.topbar{position:relative;}
+  header.topbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(245,197,66,.6),rgba(34,211,238,.6),transparent);}
 </style>
 </head>
 
@@ -51,17 +65,30 @@
 <div id="app">
 
   <!-- ===================== Top Bar ===================== -->
-  <header class="glass-d border-b border-cyan-node/20 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0">
+  <header class="topbar glass-d px-4 py-2.5 flex items-center justify-between gap-3 shrink-0">
     <div class="flex items-center gap-3">
-      <div class="h-9 w-9 rounded-lg bg-mahidol flex items-center justify-center border border-cyan-node/40">
-        <svg viewBox="0 0 24 24" class="h-5 w-5 text-gold" fill="currentColor"><path d="M12 2 2 7l10 5 10-5-10-5Zm0 7.5L4.5 6 12 3.2 19.5 6 12 9.5ZM4 9.3V14c0 2.2 3.6 4 8 4s8-1.8 8-4V9.3l-2 1v3.4c0 .8-2.4 2.3-6 2.3s-6-1.5-6-2.3V10.3l-2-1Z"/></svg>
+      <!-- Nexus node logo: จุดศูนย์กลางเชื่อมเส้นหลายทิศ -->
+      <div class="logo-nexus">
+        <svg viewBox="0 0 40 40" class="h-6 w-6">
+          <g stroke="#22d3ee" stroke-width="1.6" opacity="0.9">
+            <line x1="20" y1="20" x2="20" y2="6"/><line x1="20" y1="20" x2="33" y2="13"/>
+            <line x1="20" y1="20" x2="33" y2="28"/><line x1="20" y1="20" x2="20" y2="34"/>
+            <line x1="20" y1="20" x2="7" y2="28"/><line x1="20" y1="20" x2="7" y2="13"/>
+          </g>
+          <g fill="#7dd3fc">
+            <circle cx="20" cy="6" r="2.6"/><circle cx="33" cy="13" r="2.6"/><circle cx="33" cy="28" r="2.6"/>
+            <circle cx="20" cy="34" r="2.6"/><circle cx="7" cy="28" r="2.6"/><circle cx="7" cy="13" r="2.6"/>
+          </g>
+          <circle class="nexus-core" cx="20" cy="20" r="5" fill="#f5c542"/>
+        </svg>
       </div>
       <div class="leading-tight">
         <div class="flex items-center gap-2">
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-gold/20 text-gold font-semibold">MUKA Library</span>
           <span class="text-[10px] text-cyan-200/60">มหาวิทยาลัยมหิดล วิทยาเขตกาญจนบุรี</span>
         </div>
-        <h1 class="text-base font-bold">LIKA GeoBio-Nexus</h1>
+        <h1 class="text-lg brand-word leading-none">LIKA <span class="brand-grad">Nexus</span></h1>
+        <p class="text-[9px] text-cyan-200/50 tracking-wide">RESEARCH KNOWLEDGE NEXUS</p>
       </div>
     </div>
 
@@ -122,7 +149,7 @@
     <!-- ===== CENTER: Graph OR Cataloger ===== -->
     <main class="col-span-6 min-h-0">
       <!-- Explorer view -->
-      <section id="view-explorer" class="h-full glass-d rounded-xl overflow-hidden relative">
+      <section id="view-explorer" class="h-full glass-d rounded-xl overflow-hidden relative glow-edge">
         <canvas id="graph-canvas"></canvas>
         <div class="absolute top-3 left-3 glass rounded-lg px-3 py-1.5 text-[10px] text-cyan-100/80">ลาก = หมุน · สกอร์ล = ซูม · คลิกโหนด = รายละเอียด</div>
         <div class="absolute bottom-3 left-3 flex gap-3 text-[10px]">
@@ -645,7 +672,7 @@ function exportSummaryHTML(p){
   <div class="sec"><span class="k">ผลการศึกษาสำคัญ:</span> ${p.findings}</div>
   <div class="sec"><span class="k">ข้อจำกัด:</span> ${p.limitation}</div><hr>
   <div class="sec"><span class="k">การอ้างอิง (APA):</span><br>${toAPA(p)}</div>
-  <p class="muted">สร้างโดย LIKA GeoBio-Nexus · ห้องสมุดวิทยาเขตกาญจนบุรี</p>
+  <p class="muted">สร้างโดย LIKA Nexus · ห้องสมุดวิทยาเขตกาญจนบุรี</p>
   <script>setTimeout(()=>window.print(),400)<\/script></body></html>`);
   w.document.close();
 }
