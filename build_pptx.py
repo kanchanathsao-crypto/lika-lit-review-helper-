@@ -66,6 +66,7 @@ def oval(x,y,w,h,fill,line=None,lw=10000,grad=None,shadow=False):
     return shape("ellipse",x,y,w,h,fill,line,lw,"",grad,shadow)
 def line(x1,y1,x2,y2,color,w=9525):
     xx,yy=min(x1,x2),min(y1,y2); cx,cy=abs(x2-x1),abs(y2-y1)
+    cx=max(cx,1); cy=max(cy,1)  # กัน ext เป็น 0 (PowerPoint เปิดไม่ได้)
     flipH='1' if x2<x1 else '0'; flipV='1' if y2<y1 else '0'
     return (f'<p:cxnSp><p:nvCxnSpPr><p:cNvPr id="{nid()}" name="l"/><p:cNvCxnSpPr/><p:nvPr/></p:nvCxnSpPr>'
             f'<p:spPr><a:xfrm flipH="{flipH}" flipV="{flipV}"><a:off x="{xx}" y="{yy}"/><a:ext cx="{cx}" cy="{cy}"/></a:xfrm>'
