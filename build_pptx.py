@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 สร้าง PowerPoint (.pptx) สวยงามพร้อมภาพประกอบ vector (DrawingML)
-สำหรับ LIKA GeoBio-Nexus — Mahidol AI Community 2026
+สำหรับ LIKA Nexus — Mahidol AI Community 2026
 ครอบคลุม: Concept Paper · Source Code/Kiro · Presentation/Demo
 ไม่ใช้ไลบรารีภายนอก (เขียน OOXML ตรง + แพ็ก ZIP)
 """
@@ -122,7 +122,7 @@ slides=[]
 sp=starfield(44)
 sp+=[rrect(0,2450000,EMU_W,1950000,None,grad=(NAVY,NAVY3))]
 sp+=[icon_badge(900000,2720000,1300000,"🛰️",bg=NAVY,ring=CYAN)]
-sp+=[tbox(2450000,2650000,9200000,900000,[[("LIKA GeoBio-Nexus",34,WHITE,True,False)]]),
+sp+=[tbox(2450000,2650000,9200000,900000,[[("LIKA Nexus",38,WHITE,True,False)]]),
      tbox(2450000,3530000,9200000,500000,[[("ผู้ช่วยทบทวนวรรณกรรม & จัดการความรู้งานวิจัย · ห้องสมุดวิทยาเขตกาญจนบุรี",14,CYAN,False,False)]]),
      tbox(2450000,3980000,9200000,420000,[[("Mahidol AI Community 2026  ·  Research & Innovation",11,GREY,False,False)]])]
 # chips แถวล่าง
@@ -168,7 +168,7 @@ sp.append(rrect(mx,my,mw,mh,NAVY3,line=CYAN,lw=9525,r=6000,shadow=True))
 sp.append(rrect(mx,my,mw,420000,NAVY,r=6000))
 for k,cc in enumerate([PINK,GOLD,EMER]):
     sp.append(oval(mx+160000+k*230000,my+140000,130000,130000,cc))
-sp.append(tbox(mx+900000,my+90000,3000000,300000,[[("LIKA GeoBio-Nexus",10,WHITE,True,False)]]))
+sp.append(tbox(mx+900000,my+90000,3000000,300000,[[("LIKA Nexus",10,WHITE,True,False)]]))
 # กราฟโหนดจำลองใน mockup
 cxn=mx+mw*0.6; cyn=my+mh*0.52
 sp.append(oval(int(cxn-180000),int(cyn-180000),360000,360000,GOLD,shadow=True))
@@ -227,7 +227,7 @@ slides.append(slide(sp))
 sp=header("② SOURCE CODE / KIRO PROJECT","โครงสร้างผลงาน & การส่งมอบ",7)
 # tree ไฟล์ (ซ้าย)
 sp.append(rrect(760000,2000000,5300000,3350000,"0a1428",line=CYAN,lw=9525,r=5000,shadow=True))
-tree=[("📁 LIKA.kiro/",GOLD,0),("⭐ lika-geobio-nexus.html",WHITE,1),
+tree=[("📁 LIKA.kiro/",GOLD,0),("⭐ lika-nexus.html",WHITE,1),
       ("📄 lit-review-helper.html",GREY,1),("🗂 search.html",GREY,1),
       ("📁 .kiro/",CYAN,1),("📐 steering/rules.md",WHITE,2),
       ("📐 specs/lit-review-spec.md",WHITE,2),("📊 LIKA_Pitch_Deck.pptx",GOLD,1)]
