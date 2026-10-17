@@ -199,7 +199,7 @@ for i,(ic,t,d,c) in enumerate(users):
 slides.append(slide(sp))
 
 # ============ 6 · AI (ความคิดสร้างสรรค์/นวัตกรรม 20) ============
-sp=header("④ การประยุกต์ใช้ AI","นวัตกรรมการสกัดและสังเคราะห์องค์ความรู้",6,10,accent=CYAN,score="20 คะแนน")
+sp=header("④ การประยุกต์ใช้ AI","นวัตกรรมการสกัดและสังเคราะห์องค์ความรู้",6,10,accent=CYAN)
 sp.append(rrect(760000,1950000,5250000,3750000,NAVY3,line=CYAN,lw=12700,shadow=True))
 sp.append(icon_badge(760000+2150000,2130000,900000,"🧠",bg=NAVY,ring=CYAN))
 sp.append(tbox(960000,3080000,4900000,400000,[[("กลไก AI ของระบบ",14,CYAN,True,False)]],align="ctr"))
@@ -220,7 +220,7 @@ sp+=bullets(6500000,2560000,4800000,[
 slides.append(slide(sp))
 
 # ============ 7 · KIRO (สอดคล้องโจทย์+ใช้ Kiro 20) ============
-sp=header("⑤ การประยุกต์ใช้ Kiro Platform","พัฒนาแบบ Spec-driven ด้วย Kiro",7,10,accent=GOLD,score="20 คะแนน")
+sp=header("⑤ การประยุกต์ใช้ Kiro Platform","พัฒนาแบบ Spec-driven ด้วย Kiro",7,10,accent=GOLD)
 # ขั้นตอน Kiro
 steps=[("📐","Steering Rules",".kiro/steering/rules.md\nกำหนดมาตรฐานการพัฒนา",GOLD),
        ("📋","Specs",".kiro/specs/*.md\nกำหนดเกณฑ์ยอมรับผลงาน",CYAN),
@@ -242,7 +242,7 @@ sp.append(tbox(1000000,4950000,10300000,620000,[[("ความสอดคล�
 slides.append(slide(sp))
 
 # ============ 8 · PROTOTYPE (คุณภาพต้นแบบ 20) ============
-sp=header("⑥ ต้นแบบ (PROTOTYPE)","ระบบที่พัฒนาเสร็จและใช้งานได้จริง",8,10,accent=EMER,score="20 คะแนน")
+sp=header("⑥ ต้นแบบ (PROTOTYPE)","ระบบที่พัฒนาเสร็จและใช้งานได้จริง",8,10,accent=EMER)
 # mockup
 mx,my,mw,mh=760000,2000000,5100000,3350000
 sp.append(rrect(mx,my,mw,mh,NAVY3,line=CYAN,lw=9525,r=6000,shadow=True))
@@ -266,7 +266,7 @@ sp.append(tbox(6330000,5300000,5000000,330000,[[("สถานะ: ",11,EMER,Tru
 slides.append(slide(sp))
 
 # ============ 9 · FEASIBILITY + คุณค่า (30) ============
-sp=header("⑦ คุณค่าและความเป็นไปได้ในการใช้งานจริง","Feasibility & Value",9,10,accent=VIOLET,score="30 คะแนน")
+sp=header("⑦ คุณค่าและความเป็นไปได้ในการใช้งานจริง","Feasibility & Value",9,10,accent=VIOLET)
 vals=[("💰","ต้นทุนต่ำ","เป็นไฟล์เว็บเดียว ไม่ต้องติดตั้งเซิร์ฟเวอร์ ใช้บริการฟรี",GOLD),
       ("🏫","พร้อมใช้ที่ MUKA","เหมาะกับเครื่องบริการในห้องสมุด ใช้ได้แม้ออฟไลน์",CYAN),
       ("🔐","ปลอดภัย","ไม่ส่งข้อมูลออกนอกเครื่อง เหมาะกับงานยังไม่เผยแพร่",EMER),
@@ -285,21 +285,21 @@ slides.append(slide(sp))
 # ============ 10 · สรุป + checklist เกณฑ์ ============
 sp=starfield(36,seed=11)
 sp+=[rrect(0,470000,EMU_W,1050000,None,grad=(NAVY,NAVY3))]
-sp+=[tbox(760000,560000,11000000,760000,[[("สรุปความสอดคล้องกับเกณฑ์พิจารณา",26,WHITE,True,False)]])]
-crit=[("ความสอดคล้องกับโจทย์ & การใช้ Kiro","พัฒนาด้วย Kiro ตลอดวงจร (Steering + Specs)","20",GOLD),
-      ("ความคิดสร้างสรรค์และนวัตกรรม","รวมกราฟ 3 มิติ + สกัด AI + ร่างอัตโนมัติ","20",CYAN),
-      ("ความเป็นไปได้ในการใช้จริง (Feasibility)","ต้นทุนต่ำ ปลอดภัย พร้อมใช้ที่ MUKA","30",VIOLET),
-      ("คุณภาพของต้นแบบ (Prototype)","พัฒนาเสร็จ เผยแพร่ออนไลน์ ใช้งานได้จริง","20",EMER),
-      ("ความครบถ้วนของเอกสาร & การนำเสนอ","เอกสารครบทุกหัวข้อ อธิบายชัดเจน","10",ORANGE)]
+sp+=[tbox(760000,560000,11000000,760000,[[("สรุปจุดเด่นของผลงาน",26,WHITE,True,False)]])]
+crit=[("สอดคล้องกับโจทย์ & พัฒนาด้วย Kiro","ใช้ Kiro ตลอดวงจร (Steering + Specs)",GOLD),
+      ("ความคิดสร้างสรรค์และนวัตกรรม","รวมกราฟ 3 มิติ + สกัด AI + ร่างอัตโนมัติ",CYAN),
+      ("ความเป็นไปได้ในการใช้งานจริง","ต้นทุนต่ำ ปลอดภัย พร้อมใช้ที่ MUKA",VIOLET),
+      ("คุณภาพของต้นแบบ (Prototype)","พัฒนาเสร็จ เผยแพร่ออนไลน์ ใช้งานได้จริง",EMER),
+      ("ความครบถ้วนของเอกสาร & การนำเสนอ","เอกสารครบทุกหัวข้อ อธิบายชัดเจน",ORANGE)]
 y0=1780000
-for i,(t,d,sc,c) in enumerate(crit):
+for i,(t,d,c) in enumerate(crit):
     cy=y0+i*870000
     sp.append(rrect(760000,cy,10700000,780000,NAVY3,line=c,lw=8000,r=12000))
     sp.append(tbox(950000,cy+90000,650000,600000,[[("✓",20,c,True,False)]],anchor="ctr",align="ctr"))
-    sp.append(tbox(1700000,cy+130000,7600000,360000,[[(t,13,WHITE,True,False)]]))
-    sp.append(tbox(1700000,cy+470000,7600000,280000,[[(d,10.5,GREY,False,False)]]))
-    sp.append(rrect(10350000,cy+180000,950000,420000,None,line=c,lw=9525,r=16000))
-    sp.append(tbox(10350000,cy+230000,950000,330000,[[(sc,16,c,True,False)]],align="ctr"))
+    sp.append(tbox(1700000,cy+130000,8600000,360000,[[(t,13,WHITE,True,False)]]))
+    sp.append(tbox(1700000,cy+470000,8600000,280000,[[(d,10.5,GREY,False,False)]]))
+    sp.append(rrect(10350000,cy+210000,950000,370000,None,line=c,lw=9525,r=16000))
+    sp.append(tbox(10350000,cy+240000,950000,320000,[[("✓",16,c,True,False)]],align="ctr"))
 slides.append(slide(sp))
 
 # ======================================================================
