@@ -129,7 +129,7 @@ cx=820000
 for txt,col in [("Research & Innovation",GOLD),("Powered by Kiro",CYAN),("Privacy-first",EMER),("22 สาขาวิชา",VIOLET)]:
     w=len(txt)*80000+280000; sp.append(chip(cx,4600000,w,txt,col)); cx+=w+150000
 sp+=[tbox(820000,5750000,10600000,340000,[[("เสนอต่อ: ",10,GREY,True,False),("Mahidol AI Community 2026 — การพิจารณาผลงานรอบที่ 1 (Technical Review)",10,WHITE,False,False)]]),
-     tbox(820000,6120000,10600000,340000,[[("Demo: ",10,GOLD,True,False),("https://tinyurl.com/2u452bd4",10,WHITE,False,False)]])]
+     tbox(820000,6120000,10600000,340000,[[("Demo: ",10,GOLD,True,False),("https://tinyurl.com/lika-nexus",10,WHITE,False,False)]])]
 slides.append(slide(sp))
 
 # ============ 2 · บทสรุปผู้บริหาร + สารบัญ ============
@@ -262,7 +262,7 @@ feats=["นำเข้าไฟล์ PDF/TXT และสกัดข้อม
        "ระบบเข้าใช้แยกประเภทผู้ใช้ + แดชบอร์ดสถิติ","ส่งออกบทสรุปรายงานเป็น PDF"]
 sp+=bullets(6150000,2420000,5300000,feats,size=11.5,gap=470000,mc=EMER)
 sp.append(rrect(6150000,5250000,5300000,420000,None,line=EMER,lw=9525,r=12000))
-sp.append(tbox(6330000,5300000,5000000,330000,[[("สถานะ: ",11,EMER,True,False),("เผยแพร่ออนไลน์แล้ว · tinyurl.com/2u452bd4",11,WHITE,False,False)]]))
+sp.append(tbox(6330000,5300000,5000000,330000,[[("สถานะ: ",11,EMER,True,False),("เผยแพร่ออนไลน์แล้ว · tinyurl.com/lika-nexus",11,WHITE,False,False)]]))
 slides.append(slide(sp))
 
 # ============ 9 · FEASIBILITY + คุณค่า (30) ============

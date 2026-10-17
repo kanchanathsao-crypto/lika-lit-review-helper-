@@ -2,7 +2,7 @@
 ### ความยาวรวม ≤ 5 นาที · โครงเรื่อง: Problem → Solution → AI/Kiro → Prototype → Expected Impact
 
 > **วิธีใช้สคริปต์นี้:** คอลัมน์ "พูด (Narration)" คือบทพากย์อ่านได้เลย · คอลัมน์ "แสดงบนจอ (Visual)" คือสิ่งที่ควรเห็นในวิดีโอ (สไลด์หรือจอเว็บจริง)
-> **เว็บสำหรับอัดหน้าจอ:** https://tinyurl.com/2u452bd4
+> **เว็บสำหรับอัดหน้าจอ:** https://tinyurl.com/lika-nexus
 
 ---
 
@@ -133,4 +133,4 @@
 
 ---
 
-*สื่อประกอบ: ใช้สไลด์จาก `LIKA_Pitch_Deck.pptx` ควบคู่กับการอัดหน้าจอเว็บจริงที่ https://tinyurl.com/2u452bd4*
+*สื่อประกอบ: ใช้สไลด์จาก `LIKA_Pitch_Deck.pptx` ควบคู่กับการอัดหน้าจอเว็บจริงที่ https://tinyurl.com/lika-nexus*

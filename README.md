@@ -8,7 +8,7 @@
 เสนอต่อ: **Mahidol AI Community 2026** · หมวด **Research & Innovation**
 
 [![Demo](https://img.shields.io/badge/🌐_Live_Demo-LIKA_Nexus-f5c542?style=for-the-badge)](https://kanchanathsao-crypto.github.io/lika-lit-review-helper-/lika-nexus.html)
-[![Short link](https://img.shields.io/badge/🔗_Short-tinyurl.com%2F2u452bd4-22d3ee?style=for-the-badge)](https://tinyurl.com/2u452bd4)
+[![Short link](https://img.shields.io/badge/🔗_Short-tinyurl.com%2Flika-nexus-22d3ee?style=for-the-badge)](https://tinyurl.com/lika-nexus)
 [![Kiro](https://img.shields.io/badge/Built_with-Kiro_(Spec--driven)-002366?style=for-the-badge)](#-การประยุกต์ใช้-kiro)
 
 </div>
@@ -28,7 +28,7 @@
 | รายการ | ลิงก์ |
 |---|---|
 | 🌐 **ระบบใช้งานจริง (Live Demo)** | https://kanchanathsao-crypto.github.io/lika-lit-review-helper-/lika-nexus.html |
-| 🔗 **ลิงก์สั้น** | https://tinyurl.com/2u452bd4 |
+| 🔗 **ลิงก์สั้น** | https://tinyurl.com/lika-nexus |
 | 💻 **Source Code (GitHub)** | https://github.com/kanchanathsao-crypto/lika-lit-review-helper- |
 | 📐 **Kiro Project** | โฟลเดอร์ [`.kiro/`](./.kiro) (steering + specs) |
 

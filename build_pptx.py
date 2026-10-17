@@ -130,7 +130,7 @@ cx=900000
 for txt,col in [("3D Knowledge Graph",GOLD),("AI Auto-Cataloger",CYAN),("Usage Dashboard",EMER),("Privacy-first",VIOLET),("Powered by Kiro",ORANGE)]:
     w=len(txt)*78000+260000
     sp.append(chip(cx,4800000,w,txt,col)); cx+=w+150000
-sp.append(tbox(900000,6250000,10800000,360000,[[("Demo: ",10,GOLD,True,False),("https://tinyurl.com/2u452bd4",10,WHITE,False,False)]]))
+sp.append(tbox(900000,6250000,10800000,360000,[[("Demo: ",10,GOLD,True,False),("https://tinyurl.com/lika-nexus",10,WHITE,False,False)]]))
 slides.append(slide(sp))
 
 # ============ Slide 2: ภาพรวม 3 รายการส่งผลงาน ============
@@ -236,7 +236,7 @@ for i,(t,c,ind) in enumerate(tree):
 # การส่งมอบ (ขวา)
 sp.append(tbox(6260000,2000000,5200000,380000,[[("ช่องทางการส่งมอบ & ตรวจสอบ",13,GOLD,True,False)]]))
 links=[("💻 Source (GitHub)","github.com/kanchanathsao-crypto/","lika-lit-review-helper-",CYAN),
-       ("🌐 Demo ใช้งานจริง","tinyurl.com/2u452bd4","",EMER),
+       ("🌐 Demo ใช้งานจริง","tinyurl.com/lika-nexus","",EMER),
        ("🛠 เทคโนโลยี","HTML5 · Tailwind · Three.js r128","PDF.js · ประมวลผลในเบราว์เซอร์",VIOLET),
        ("✅ พัฒนาด้วย Kiro","Spec-driven · ตรวจ commit history","ได้จาก GitHub",GOLD)]
 for i,(t,d1,d2,c) in enumerate(links):
@@ -312,7 +312,7 @@ for i,(n,d,c) in enumerate(stats):
     sp.append(rrect(cx,3450000,2550000,1400000,NAVY3,line=c,lw=9525,shadow=True))
     sp.append(tbox(cx+150000,3600000,2250000,600000,[[(n,19,c,True,False)]],align="ctr"))
     sp.append(tbox(cx+150000,4250000,2250000,500000,[[(d,10.5,WHITE,False,False)]],align="ctr"))
-sp.append(tbox(760000,5300000,10800000,380000,[[("🌐 Demo: ",11,GOLD,True,False),("https://tinyurl.com/2u452bd4",11,WHITE,False,False)]]))
+sp.append(tbox(760000,5300000,10800000,380000,[[("🌐 Demo: ",11,GOLD,True,False),("https://tinyurl.com/lika-nexus",11,WHITE,False,False)]]))
 sp.append(tbox(760000,5720000,10800000,380000,[[("💻 Source: ",11,GOLD,True,False),("github.com/kanchanathsao-crypto/lika-lit-review-helper-",11,WHITE,False,False)]]))
 slides.append(slide(sp))
 
