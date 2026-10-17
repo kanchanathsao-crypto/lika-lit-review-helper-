@@ -86,7 +86,7 @@
     </label>
 
     <div class="flex flex-wrap items-center gap-3 mt-4">
-      <button id="btn-sample" class="glass px-4 py-2 rounded-lg text-sm hover:bg-white/10 transition">โหลดตัวอย่าง 3 ฉบับ (MUKA)</button>
+      <button id="btn-sample" class="glass px-4 py-2 rounded-lg text-sm hover:bg-white/10 transition">โหลดตัวอย่าง 6 สาขา (วิทย์ · สังคม · มนุษยศาสตร์)</button>
       <button id="btn-clear" class="glass px-4 py-2 rounded-lg text-sm hover:bg-white/10 transition">ล้างทั้งหมด</button>
       <span id="ingest-status" class="text-xs text-cyan-200/60"></span>
     </div>
@@ -212,6 +212,33 @@ const SAMPLES = [
     findings:'สูตรหมัก 48 ชม. ได้คะแนนการยอมรับสูงสุด โปรตีนเพิ่มขึ้น 23%',
     limitation:'ยังไม่ได้ทดสอบอายุการเก็บรักษาระดับการผลิตเชิงพาณิชย์',
     methodology:'RCBD Experimental Design' },
+  // --- มนุษยศาสตร์ ---
+  { author:'Jindarat', authorsFull:'Jindarat, K., & Pimpa, W.', year:2024, field:'ประวัติศาสตร์',
+    title:'ความทรงจำร่วมและการเล่าเรื่องของชุมชนริมทางรถไฟสายมรณะ จังหวัดกาญจนบุรี',
+    objective:'ศึกษาการประกอบสร้างความทรงจำร่วมและการเล่าเรื่องของชุมชนในพื้นที่ประวัติศาสตร์',
+    dataset:'ผู้ให้ข้อมูลหลัก 28 คน + เอกสารจดหมายเหตุและภาพถ่ายช่วงสงคราม',
+    method:'การวิจัยเอกสารประวัติศาสตร์ร่วมกับการสัมภาษณ์เชิงลึกและประวัติศาสตร์บอกเล่า',
+    findings:'พบว่าความทรงจำร่วมถูกถ่ายทอดผ่านพิธีกรรมและพื้นที่เชิงสัญลักษณ์ สร้างอัตลักษณ์ชุมชน',
+    limitation:'ผู้ให้ข้อมูลรุ่นผู้ประสบเหตุการณ์มีจำนวนจำกัดและอายุมาก',
+    methodology:'Documentary / Historical Analysis' },
+  // --- สังคมศาสตร์ / ศึกษาศาสตร์ ---
+  { author:'Boonrueang', authorsFull:'Boonrueang, S., Thawee, N., & Maneerat, P.', year:2023, field:'ศึกษาศาสตร์ / การเรียนรู้',
+    title:'ผลของการจัดการเรียนรู้เชิงรุกต่อทักษะการคิดเชิงวิพากษ์ของนักศึกษาระดับปริญญาตรี',
+    objective:'เปรียบเทียบทักษะการคิดเชิงวิพากษ์ก่อน-หลังการจัดการเรียนรู้เชิงรุก',
+    dataset:'นักศึกษา 2 กลุ่ม รวม 86 คน (กลุ่มทดลอง/กลุ่มควบคุม)',
+    method:'การวิจัยกึ่งทดลอง (quasi-experimental) ร่วมกับแบบทดสอบและแบบสอบถาม',
+    findings:'กลุ่มที่เรียนเชิงรุกมีคะแนนการคิดเชิงวิพากษ์สูงกว่าอย่างมีนัยสำคัญทางสถิติ',
+    limitation:'ดำเนินการในรายวิชาเดียวและภาคการศึกษาเดียว',
+    methodology:'Experimental (RCBD/Factorial)' },
+  // --- บริหารธุรกิจ / การท่องเที่ยว ---
+  { author:'Chalermsak', authorsFull:'Chalermsak, A., & Rattana, D.', year:2024, field:'การท่องเที่ยว / บริการ',
+    title:'ปัจจัยที่ส่งผลต่อความตั้งใจกลับมาเที่ยวซ้ำของนักท่องเที่ยวเชิงวัฒนธรรมในกาญจนบุรี',
+    objective:'วิเคราะห์ปัจจัยเชิงสาเหตุที่ส่งผลต่อความตั้งใจกลับมาเที่ยวซ้ำ',
+    dataset:'แบบสอบถามนักท่องเที่ยว 420 ชุด',
+    method:'การวิเคราะห์โมเดลสมการโครงสร้าง (SEM) จากข้อมูลแบบสอบถาม',
+    findings:'คุณภาพประสบการณ์และความผูกพันกับสถานที่ส่งผลเชิงบวกต่อความตั้งใจกลับมาเที่ยวซ้ำ',
+    limitation:'เก็บข้อมูลเฉพาะช่วงฤดูท่องเที่ยว อาจมีอคติเชิงฤดูกาล',
+    methodology:'Structural Equation Modeling (SEM)' },
 ];
 
 /* ======================================================================
@@ -324,34 +351,85 @@ function guessAuthorYear(text, filename) {
 
 function guessField(text) {
   const t = text.toLowerCase();
+  // ครอบคลุมทุกสาขา: วิทยาศาสตร์สุขภาพ · วิทยาศาสตร์ · สังคมศาสตร์ · มนุษยศาสตร์ · บริหาร/นิติ/เศรษฐ ฯลฯ
   const map = [
-    ['การแพทย์ / สาธารณสุข', ['clinical','patient','medic','disease','therapy','treatment','trial','diagnos','health','nursing','epidemiolog','ผู้ป่วย','การรักษา','คลินิก','สุขภาพ','สาธารณสุข','โรค','พยาบาล','บริการสุขภาพ']],
-    ['ธรณีวิทยา', ['geolog','mineral','karst','rock','sediment','ธรณี','แร่','หิน']],
-    ['ชีววิทยาอนุรักษ์', ['biodiversity','conservation','species','ecolog','forest','ชีววิทยา','อนุรักษ์','ความหลากหลาย']],
-    ['นวัตกรรมอาหาร', ['food','fermentation','protein','nutrition','sensory','อาหาร','โปรตีน','หมัก']],
-    ['วิศวกรรมสิ่งแวดล้อม', ['water quality','environment','pollution','contamin','สิ่งแวดล้อม','มลพิษ','คุณภาพน้ำ']],
-    ['วิทยาศาสตร์การเกษตร', ['agricultur','crop','soil','yield','เกษตร','ดิน','พืชผล']],
+    // --- วิทยาศาสตร์สุขภาพ ---
+    ['การแพทย์ / สาธารณสุข', ['clinical','patient','medic','disease','therapy','treatment','trial','diagnos','health','nursing','epidemiolog','pharmac','ผู้ป่วย','การรักษา','คลินิก','สุขภาพ','สาธารณสุข','โรค','พยาบาล','เภสัช','บริการสุขภาพ']],
+    // --- วิทยาศาสตร์กายภาพ/ชีวภาพ ---
+    ['ธรณีวิทยา', ['geolog','mineral','karst','rock','sediment','tectonic','ธรณี','แร่','หิน','ตะกอน']],
+    ['ชีววิทยาอนุรักษ์', ['biodiversity','conservation','species','ecolog','forest','wildlife','habitat','ชีววิทยา','อนุรักษ์','ความหลากหลาย','ระบบนิเวศ','สัตว์ป่า']],
+    ['นวัตกรรมอาหาร', ['food','fermentation','protein','nutrition','sensory','culinary','อาหาร','โปรตีน','หมัก','โภชนาการ']],
+    ['วิศวกรรม / เทคโนโลยี', ['engineering','algorithm','software','machine learning','deep learning','iot','sensor','network','robot','วิศวกรรม','อัลกอริทึม','ซอฟต์แวร์','ปัญญาประดิษฐ์','เทคโนโลยี']],
+    ['วิศวกรรมสิ่งแวดล้อม', ['water quality','environment','pollution','contamin','wastewater','emission','สิ่งแวดล้อม','มลพิษ','คุณภาพน้ำ','ของเสีย']],
+    ['วิทยาศาสตร์การเกษตร', ['agricultur','crop','soil','yield','livestock','irrigation','เกษตร','ดิน','พืชผล','ปศุสัตว์','ชลประทาน']],
+    // --- สังคมศาสตร์ ---
+    ['ศึกษาศาสตร์ / การเรียนรู้', ['education','learning','teaching','curriculum','student','classroom','pedagog','ศึกษาศาสตร์','การศึกษา','การเรียนรู้','การสอน','หลักสูตร','ผู้เรียน','นักเรียน','นักศึกษา']],
+    ['บริหารธุรกิจ / การจัดการ', ['management','business','marketing','consumer','organization','entrepreneur','supply chain','hrm','human resource','บริหารธุรกิจ','การจัดการ','การตลาด','ผู้บริโภค','องค์กร','ทรัพยากรมนุษย์','ผู้ประกอบการ']],
+    ['บัญชี / การเงิน', ['accounting','finance','financial','audit','investment','banking','บัญชี','การเงิน','การลงทุน','ตรวจสอบบัญชี','ธนาคาร']],
+    ['เศรษฐศาสตร์', ['economic','econometr','gdp','market demand','labor market','เศรษฐศาสตร์','เศรษฐกิจ','อุปสงค์','ตลาดแรงงาน']],
+    ['รัฐศาสตร์ / นโยบายสาธารณะ', ['political','governance','public policy','democracy','election','รัฐศาสตร์','การเมือง','ธรรมาภิบาล','นโยบายสาธารณะ','ประชาธิปไตย']],
+    ['นิติศาสตร์ / กฎหมาย', ['law','legal','legislation','juris','rights','regulation','นิติศาสตร์','กฎหมาย','สิทธิ','ระเบียบ','ข้อบังคับ']],
+    ['สังคมวิทยา / มานุษยวิทยา', ['sociolog','anthropolog','community','social capital','ethnic','kinship','สังคมวิทยา','มานุษยวิทยา','ชุมชน','ชาติพันธุ์','เครือญาติ']],
+    ['จิตวิทยา', ['psycholog','cognitive','behavior','mental','emotion','จิตวิทยา','พฤติกรรม','การรับรู้','อารมณ์','สุขภาพจิต']],
+    // --- มนุษยศาสตร์ ---
+    ['ภาษาศาสตร์ / ภาษา', ['linguistic','language','phonolog','syntax','semantic','discourse','translation','ภาษาศาสตร์','ภาษา','วากยสัมพันธ์','อรรถศาสตร์','การแปล']],
+    ['วรรณกรรม / วรรณคดี', ['literature','literary','poetry','novel','narrative','fiction','วรรณกรรม','วรรณคดี','กวีนิพนธ์','นวนิยาย','เรื่องเล่า']],
+    ['ประวัติศาสตร์', ['history','historical','archive','dynasty','colonial','ancient','ประวัติศาสตร์','โบราณ','อาณานิคม','ราชวงศ์','จดหมายเหตุ']],
+    ['ปรัชญา / ศาสนา', ['philosoph','ethic','metaphys','religio','buddhis','theolog','ปรัชญา','จริยธรรม','ศาสนา','พุทธ','ปรัชญาศาสนา']],
+    ['ศิลปะ / วัฒนธรรม / ดนตรี', ['art','cultural','heritage','music','performance','aesthetic','museum','ศิลปะ','วัฒนธรรม','มรดก','ดนตรี','นาฏศิลป์','สุนทรียะ','พิพิธภัณฑ์']],
+    ['การท่องเที่ยว / บริการ', ['tourism','hospitality','tourist','destination','การท่องเที่ยว','นักท่องเที่ยว','การโรงแรม','แหล่งท่องเที่ยว']],
+    ['บรรณารักษ์ / สารสนเทศ', ['library','information science','archiv','bibliometric','cataloging','บรรณารักษ','สารสนเทศ','ห้องสมุด','บรรณมิติ']],
   ];
-  for (const [label, kws] of map) if (kws.some(k => t.includes(k))) return label;
-  return 'งานวิจัยทั่วไป';
+  // ให้คะแนนตามจำนวน keyword ที่พบ แล้วเลือกสาขาที่ได้คะแนนสูงสุด (ไม่ขึ้นกับลำดับ)
+  let best = null, bestScore = 0;
+  for (const [label, kws] of map) {
+    const score = kws.reduce((s,k)=> s + (t.includes(k) ? 1 : 0), 0);
+    if (score > bestScore) { bestScore = score; best = label; }
+  }
+  return best || 'สหวิทยาการ / ทั่วไป';
 }
 
 function guessMethodology(text) {
   const t = text.toLowerCase();
   const patterns = [
+    // --- เชิงปริมาณ / ทดลอง (วิทยาศาสตร์-สุขภาพ) ---
     ['Randomized Controlled Trial', ['randomized controlled','rct','randomised']],
-    ['Systematic Review / Meta-analysis', ['systematic review','meta-analysis','meta analysis','prisma']],
-    ['Cohort Study', ['cohort']],
+    ['Systematic Review / Meta-analysis', ['systematic review','meta-analysis','meta analysis','prisma','การทบทวนอย่างเป็นระบบ']],
+    ['Cohort Study', ['cohort','รุ่นติดตาม']],
     ['Case-Control Study', ['case-control','case control']],
-    ['Cross-sectional Survey', ['cross-sectional','survey','questionnaire','แบบสอบถาม']],
-    ['Qualitative Interview', ['qualitative','interview','thematic analysis','สัมภาษณ์']],
-    ['Experimental (RCBD/Factorial)', ['rcbd','factorial','completely randomized','การทดลอง']],
-    ['GIS / Spatial Analysis', ['gis','spatial analysis','remote sensing','ภาพถ่ายดาวเทียม']],
+    ['Experimental (RCBD/Factorial)', ['rcbd','factorial','completely randomized','true experiment','การทดลองแบบสุ่ม','เชิงทดลอง']],
+    ['Quasi-Experimental', ['quasi-experiment','quasi experiment','pretest-posttest','pre-test post-test','กึ่งทดลอง','ก่อนเรียนหลังเรียน','ก่อน-หลัง']],
+    // --- เชิงสำรวจ/สถิติ (สังคมศาสตร์) ---
+    ['Cross-sectional Survey', ['cross-sectional','survey research','questionnaire survey','แบบสอบถาม','การสำรวจ','เชิงสำรวจ']],
+    ['Correlational / Regression', ['correlation','regression','multiple regression','สหสัมพันธ์','การถดถอย']],
+    ['Structural Equation Modeling (SEM)', ['structural equation','sem','path analysis','confirmatory factor','โมเดลสมการโครงสร้าง','การวิเคราะห์เส้นทาง']],
+    // --- เชิงคุณภาพ (สังคม/มนุษยศาสตร์) ---
+    ['Qualitative Interview', ['in-depth interview','semi-structured interview','interview','สัมภาษณ์เชิงลึก','สัมภาษณ์']],
+    ['Thematic Analysis', ['thematic analysis','การวิเคราะห์แก่นสาระ','วิเคราะห์เชิงเนื้อหาแบบแก่น']],
+    ['Ethnography / Field Study', ['ethnograph','participant observation','fieldwork','ชาติพันธุ์วรรณา','การสังเกตแบบมีส่วนร่วม','ภาคสนามเชิงคุณภาพ']],
+    ['Grounded Theory', ['grounded theory','ทฤษฎีฐานราก']],
+    ['Case Study', ['case study','กรณีศึกษา']],
+    ['Focus Group', ['focus group','สนทนากลุ่ม','กลุ่มเป้าหมาย']],
+    ['Content / Discourse Analysis', ['content analysis','discourse analysis','textual analysis','corpus','การวิเคราะห์เนื้อหา','วาทกรรม','คลังข้อมูลภาษา']],
+    ['Mixed-Methods', ['mixed method','mixed-methods','triangulation','แบบผสม','พหุวิธี','สามเส้า']],
+    // --- มนุษยศาสตร์/ประวัติศาสตร์ ---
+    ['Documentary / Historical Analysis', ['documentary research','historical analysis','archival','primary sources','วิจัยเอกสาร','เอกสารชั้นต้น','ประวัติศาสตร์','จดหมายเหตุ']],
+    ['Hermeneutic / Interpretive', ['hermeneutic','interpretive','phenomenolog','ตีความ','ปรากฏการณ์วิทยา']],
+    ['Comparative Study', ['comparative study','comparative analysis','การศึกษาเปรียบเทียบ','เชิงเปรียบเทียบ']],
+    // --- วิทยาศาสตร์เชิงพื้นที่/จำลอง ---
+    ['GIS / Spatial Analysis', ['gis','spatial analysis','remote sensing','ภาพถ่ายดาวเทียม','เชิงพื้นที่']],
     ['Field Sampling', ['field survey','permanent plot','sampling plot','สำรวจภาคสนาม','แปลงตัวอย่าง']],
-    ['Simulation / Modeling', ['simulation','model','qual2k','numerical','แบบจำลอง']],
+    ['Simulation / Modeling', ['simulation','numerical model','qual2k','computational','แบบจำลอง','การจำลอง']],
+    ['Action Research', ['action research','participatory action','วิจัยเชิงปฏิบัติการ','การวิจัยปฏิบัติการแบบมีส่วนร่วม']],
+    ['R&D / Development Research', ['research and development','r&d','design-based','การวิจัยและพัฒนา','วิจัยเชิงพัฒนา']],
   ];
-  for (const [label, kws] of patterns) if (kws.some(k => t.includes(k))) return label;
-  return 'ระเบียบวิธีอื่น ๆ';
+  // นับคะแนน keyword แล้วเลือกระเบียบวิธีที่ตรงมากที่สุด (ไม่ขึ้นกับลำดับ)
+  let best = null, bestScore = 0;
+  for (const [label, kws] of patterns) {
+    const score = kws.reduce((s,k)=> s + (t.includes(k) ? 1 : 0), 0);
+    if (score > bestScore) { bestScore = score; best = label; }
+  }
+  return best || 'ระเบียบวิธีอื่น ๆ';
 }
 
 // ดึงประโยคที่อยู่หลังคำสำคัญ (snippet) ประมาณ 220 ตัวอักษร
