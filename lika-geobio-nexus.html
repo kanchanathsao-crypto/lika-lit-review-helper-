@@ -260,6 +260,7 @@
       <button id="login-submit" class="flex-1 bg-gold text-slate-deep font-semibold px-4 py-2.5 rounded-lg text-sm">เข้าสู่ระบบ &amp; บันทึกการเข้าใช้</button>
       <button id="logout-btn" class="glass chip px-4 py-2.5 rounded-lg text-sm text-cyan-200 hidden">ออกจากระบบ</button>
     </div>
+    <button id="login-skip" class="w-full text-center text-[11px] text-cyan-200/50 hover:text-cyan-200 mt-3">เข้าใช้งานก่อนโดยไม่ระบุตัวตน →</button>
   </div>
 </div>
 
@@ -878,6 +879,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('login-submit').addEventListener('click',doLogin);
   document.getElementById('login-name').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
   document.getElementById('logout-btn').addEventListener('click',doLogout);
+  document.getElementById('login-skip').addEventListener('click',closeLogin);
   document.getElementById('btn-reset-stats').addEventListener('click',()=>{
     if(confirm('ยืนยันการล้างสถิติการเข้าใช้ทั้งหมดในเครื่องนี้?')){ saveLog([]); renderDashboard(); }
   });
@@ -899,6 +901,9 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   // Kiro agent latency flavor
   let ms=38; setInterval(()=>{ ms=30+Math.floor(Math.random()*25); document.getElementById('agent-latency').textContent=`Active (${ms}ms)`; },2600);
+
+  // เด้งหน้าต่างเข้าสู่ระบบอัตโนมัติเมื่อเปิดเว็บ (ถ้ายังไม่ได้เข้าสู่ระบบ)
+  if(!currentUser){ setTimeout(openLogin, 400); }
 });
 </script>
 </body>
