@@ -120,7 +120,7 @@
           <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-node/20 text-cyan-node">Local RAG</span>
         </div>
         <form id="search-form" class="relative">
-          <input id="search-input" type="text" placeholder="ค้นหา เช่น พืชสมุนไพร, แร่รัตนชาติ…"
+          <input id="search-input" type="text" placeholder="ค้นหา เช่น แร่รัตนชาติ, โปรตีน, ท่องเที่ยว…"
             class="w-full glass rounded-lg pl-9 pr-8 py-2.5 text-xs placeholder:text-cyan-200/40 focus:outline-none focus:ring-2 focus:ring-cyan-node/50" />
           <span class="absolute left-3 top-2.5 text-cyan-200/50">⌕</span>
           <button type="button" id="search-clear" class="absolute right-2.5 top-2 text-cyan-200/40 hover:text-white text-sm">×</button>
@@ -366,7 +366,8 @@ const SAMPLES = [
     limitation:'เก็บข้อมูลเฉพาะช่วงฤดูท่องเที่ยว', methodology:'Structural Equation Modeling (SEM)',
     keywords:['ท่องเที่ยวเชิงวัฒนธรรม','เที่ยวซ้ำ','SEM'], marc:'338.4791' },
 ];
-const HOT = ['พืชสมุนไพร','แร่รัตนชาติบ่อพลอย','เกษตรพื้นที่สูง MUKA','มะนาวป้องกันโรค','ความทรงจำร่วม','SEM ท่องเที่ยว'];
+// คำยอดนิยม — เลือกจาก keyword/หัวเรื่องจริงในคลัง เพื่อให้กดแล้วเจอผลแน่นอน
+const HOT = ['แร่รัตนชาติ','ความหลากหลาย','โปรตีน','ความทรงจำร่วม','การเรียนรู้เชิงรุก','ท่องเที่ยว'];
 
 /* ========================= Ingestion ========================= */
 async function handleFiles(fileList){
@@ -575,8 +576,17 @@ function clampLen(s){ s=s.replace(/\s+/g,' ').trim(); return s.length>230 ? s.sl
 function loadSamples(){ SAMPLES.forEach(s=>PAPERS.push({...s,id:'S'+(++seq),source:'sample'})); document.getElementById('ingest-status').textContent=`โหลดตัวอย่าง ${SAMPLES.length} ฉบับ`; refreshAll(); }
 
 /* ========================= Render: domains, matrix, draft ========================= */
-function visiblePapers(){ if(!filterText) return PAPERS; const q=filterText.toLowerCase();
-  return PAPERS.filter(p=>(p.title+p.field+(p.keywords||[]).join(' ')+p.authorsFull).toLowerCase().includes(q)); }
+function visiblePapers(){
+  if(!filterText) return PAPERS;
+  // รวมทุกฟิลด์ที่ค้นหาได้เป็น "ข้อความค้นหา" ก้อนเดียวต่อเอกสาร
+  const haystack = p => [p.title,p.field,p.authorsFull,p.objective,p.dataset,p.method,
+    p.findings,p.limitation,p.methodology,(p.keywords||[]).join(' '),p.program,p.advisor]
+    .filter(Boolean).join(' ').toLowerCase();
+  // แยกเป็นคำย่อย: เจอ "คำใดคำหนึ่ง" ก็ถือว่าตรง (เพิ่มโอกาสเจอผล)
+  const terms = filterText.toLowerCase().split(/[\s,]+/).filter(Boolean);
+  if(!terms.length) return PAPERS;
+  return PAPERS.filter(p=>{ const h=haystack(p); return terms.some(t=>h.includes(t)); });
+}
 
 function renderDomains(){
   const groups={}; visiblePapers().forEach(p=>{ (groups[p.field]=groups[p.field]||[]).push(p); });
@@ -584,7 +594,14 @@ function renderDomains(){
   const fields=Object.keys(groups);
   document.getElementById('node-count').textContent=`${visiblePapers().length} NODES`;
   document.getElementById('lib-index').textContent=(1414+PAPERS.length);
-  if(!fields.length){ el.innerHTML='<p class="text-[11px] text-cyan-200/40 py-4">ยังไม่มีข้อมูล — ไปที่แท็บ AI Auto-Cataloger เพื่อโหลดตัวอย่าง/อัปโหลด</p>'; return; }
+  if(!fields.length){
+    if(filterText && PAPERS.length){
+      el.innerHTML=`<p class="text-[11px] text-orange-300 py-4">ไม่พบผลสำหรับ “${filterText}” — ลองคำอื่น หรือกด × เพื่อล้างการค้นหา</p>`;
+    } else {
+      el.innerHTML='<p class="text-[11px] text-cyan-200/40 py-4">ยังไม่มีข้อมูล — ไปที่แท็บ AI Auto-Cataloger เพื่อโหลดตัวอย่าง/อัปโหลด</p>';
+    }
+    return;
+  }
   el.innerHTML=fields.map((f,i)=>{
     const color=['#f5c542','#34d399','#22d3ee','#a78bfa','#fb923c','#f472b6'][i%6];
     return `<div>
