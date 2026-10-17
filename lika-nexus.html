@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LIKA Nexus — Research Knowledge Nexus · ห้องสมุดวิทยาเขตกาญจนบุรี (MUKA)</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script>
+  tailwind.config = { theme: { extend: { colors: {
+    'mahidol':'#002366','mahidol-light':'#1e3a8a','slate-deep':'#060a16','gold':'#f5c542','cyan-node':'#22d3ee','emerald-node':'#34d399'
+  } } } };
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  html,body{font-family:'Sarabun',system-ui,sans-serif;height:100%;margin:0;overflow:hidden;}
+  #app{height:100vh;display:flex;flex-direction:column;}
+  body{
+    background:
+      radial-gradient(1400px 700px at 70% -10%, rgba(0,35,102,.55), transparent 60%),
+      radial-gradient(900px 500px at 10% 110%, rgba(34,211,238,.1), transparent 55%),
+      #060a16;
+    color:#e5edff;
+  }
+  .glass{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
+  .glass-d{background:rgba(6,10,22,.72);border:1px solid rgba(34,211,238,.18);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+  .scroll-thin::-webkit-scrollbar{width:7px;height:7px;}
+  .scroll-thin::-webkit-scrollbar-thumb{background:rgba(34,211,238,.3);border-radius:8px;}
+  .scroll-thin::-webkit-scrollbar-track{background:transparent;}
+  #graph-canvas{display:block;width:100%;height:100%;cursor:grab;}
+  #graph-canvas:active{cursor:grabbing;}
+  .citation{color:#7dd3fc;cursor:help;border-bottom:1px dotted rgba(125,211,252,.5);}
+  [contenteditable="true"]:focus{outline:2px solid rgba(34,211,238,.5);border-radius:10px;}
+  #tooltip{position:fixed;pointer-events:none;z-index:60;display:none;padding:6px 10px;font-size:12px;border-radius:8px;background:rgba(0,35,102,.95);border:1px solid rgba(34,211,238,.5);color:#e5edff;max-width:280px;}
+  .spin{animation:spin .9s linear infinite;} @keyframes spin{to{transform:rotate(360deg);}}
+  .tab-active{background:linear-gradient(90deg,#f5c542,#eab308);color:#060a16;font-weight:700;box-shadow:0 2px 14px rgba(245,197,66,.35);}
+  .chip{transition:all .18s cubic-bezier(.2,.8,.2,1);} .chip:hover{transform:translateY(-1px);}
+  .pulse-dot{animation:pulse 1.8s infinite;} @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .panel-enter{animation:slideIn .35s ease;} @keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+  .dz.drag{border-color:#22d3ee;background:rgba(34,211,238,.08);}
+  /* --- Modern brand look --- */
+  .brand-word{font-weight:800;letter-spacing:.3px;}
+  .brand-grad{background:linear-gradient(92deg,#f5c542 0%,#7dd3fc 55%,#22d3ee 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .logo-nexus{position:relative;height:38px;width:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 30% 25%, #0b2a66, #061634);
+    border:1px solid rgba(34,211,238,.45);
+    box-shadow:0 0 0 1px rgba(245,197,66,.15), 0 6px 20px rgba(0,35,102,.55), inset 0 0 14px rgba(34,211,238,.18);}
+  .logo-nexus svg{filter:drop-shadow(0 0 4px rgba(34,211,238,.7));}
+  .nexus-core{animation:breathe 3s ease-in-out infinite;} @keyframes breathe{0%,100%{opacity:1}50%{opacity:.55}}
+  .glow-edge{box-shadow:0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(0,35,102,.4);}
+  .hairline{height:1px;background:linear-gradient(90deg,transparent,rgba(245,197,66,.5),rgba(34,211,238,.5),transparent);}
+  header.topbar{position:relative;}
+  header.topbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(245,197,66,.6),rgba(34,211,238,.6),transparent);}
+</style>
+</head>
+
+<body>
+<div id="tooltip"></div>
+<div id="app">
+
+  <!-- ===================== Top Bar ===================== -->
+  <header class="topbar glass-d px-4 py-2.5 flex items-center justify-between gap-3 shrink-0">
+    <div class="flex items-center gap-3">
+      <!-- Nexus node logo: จุดศูนย์กลางเชื่อมเส้นหลายทิศ -->
+      <div class="logo-nexus">
+        <svg viewBox="0 0 40 40" class="h-6 w-6">
+          <g stroke="#22d3ee" stroke-width="1.6" opacity="0.9">
+            <line x1="20" y1="20" x2="20" y2="6"/><line x1="20" y1="20" x2="33" y2="13"/>
+            <line x1="20" y1="20" x2="33" y2="28"/><line x1="20" y1="20" x2="20" y2="34"/>
+            <line x1="20" y1="20" x2="7" y2="28"/><line x1="20" y1="20" x2="7" y2="13"/>
+          </g>
+          <g fill="#7dd3fc">
+            <circle cx="20" cy="6" r="2.6"/><circle cx="33" cy="13" r="2.6"/><circle cx="33" cy="28" r="2.6"/>
+            <circle cx="20" cy="34" r="2.6"/><circle cx="7" cy="28" r="2.6"/><circle cx="7" cy="13" r="2.6"/>
+          </g>
+          <circle class="nexus-core" cx="20" cy="20" r="5" fill="#f5c542"/>
+        </svg>
+      </div>
+      <div class="leading-tight">
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-gold/20 text-gold font-semibold">MUKA Library</span>
+          <span class="text-[10px] text-cyan-200/60">มหาวิทยาลัยมหิดล วิทยาเขตกาญจนบุรี</span>
+        </div>
+        <h1 class="text-lg brand-word leading-none">LIKA <span class="brand-grad">Nexus</span></h1>
+        <p class="text-[9px] text-cyan-200/50 tracking-wide">RESEARCH KNOWLEDGE NEXUS</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button id="tab-explorer" class="tab-active chip text-xs px-4 py-2 rounded-lg">⬡ 3D Knowledge Explorer</button>
+      <button id="tab-catalog" class="glass chip text-xs px-4 py-2 rounded-lg text-cyan-100">⚙ AI Auto-Cataloger</button>
+      <button id="tab-dashboard" class="glass chip text-xs px-4 py-2 rounded-lg text-cyan-100">📊 Usage Dashboard</button>
+    </div>
+
+    <div class="flex items-center gap-2 text-[11px]">
+      <span id="user-chip" class="glass px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 cursor-pointer hover:bg-white/10">
+        <span id="user-avatar" class="h-5 w-5 rounded-full bg-gold/30 text-gold flex items-center justify-center text-[10px] font-bold">?</span>
+        <span id="user-label" class="text-cyan-100">ยังไม่เข้าสู่ระบบ</span>
+      </span>
+      <span class="glass px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-400 pulse-dot"></span> Kiro Agent: <span id="agent-latency" class="text-emerald-300 font-semibold">Active</span></span>
+      <span class="hidden xl:inline-flex glass px-3 py-1.5 rounded-lg items-center gap-1.5 text-cyan-200">◆ Kiro Specs <span class="text-emerald-300 font-semibold">100% Pass</span></span>
+    </div>
+  </header>
+
+  <!-- ===================== Main 3-column ===================== -->
+  <div class="flex-1 grid grid-cols-12 gap-3 p-3 min-h-0">
+
+    <!-- ===== LEFT: Search + Domains ===== -->
+    <aside class="col-span-3 flex flex-col gap-3 min-h-0">
+      <!-- Search -->
+      <section class="glass-d rounded-xl p-4 shrink-0">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-semibold text-gold inline-flex items-center gap-1.5">🔎 ค้นหาเชิงแนวคิด (Semantic Search)</h2>
+          <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-node/20 text-cyan-node">Local RAG</span>
+        </div>
+        <form id="search-form" class="relative">
+          <input id="search-input" type="text" placeholder="ค้นหา เช่น พืชสมุนไพร, แร่รัตนชาติ…"
+            class="w-full glass rounded-lg pl-9 pr-8 py-2.5 text-xs placeholder:text-cyan-200/40 focus:outline-none focus:ring-2 focus:ring-cyan-node/50" />
+          <span class="absolute left-3 top-2.5 text-cyan-200/50">⌕</span>
+          <button type="button" id="search-clear" class="absolute right-2.5 top-2 text-cyan-200/40 hover:text-white text-sm">×</button>
+        </form>
+        <p class="text-[10px] text-cyan-200/50 mt-2">หัวข้อยอดนิยม:</p>
+        <div id="hot-chips" class="flex flex-wrap gap-1.5 mt-1.5"></div>
+      </section>
+
+      <!-- Domains -->
+      <section class="glass-d rounded-xl p-4 flex-1 min-h-0 flex flex-col">
+        <div class="flex items-center justify-between mb-2 shrink-0">
+          <h2 class="text-xs font-semibold text-cyan-node inline-flex items-center gap-1.5">⬡ โดเมนความรู้ MUKA</h2>
+          <span id="node-count" class="text-[9px] px-1.5 py-0.5 rounded bg-mahidol/60 text-gold">0 NODES</span>
+        </div>
+        <div id="domain-list" class="space-y-2 overflow-y-auto scroll-thin pr-1 flex-1"></div>
+        <div class="shrink-0 pt-3 mt-2 border-t border-white/10 flex items-center justify-between">
+          <button id="reset-view" class="glass chip text-[10px] px-2.5 py-1.5 rounded-lg">⟳ Reset View</button>
+          <div class="text-right text-[9px] text-cyan-200/50 leading-tight">
+            <div>Library Index: <span id="lib-index" class="text-gold font-semibold">0</span> Papers</div>
+            <div>Knowledge Graph: <span class="text-emerald-300">Active</span></div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ===== CENTER: Graph OR Cataloger ===== -->
+    <main class="col-span-6 min-h-0">
+      <!-- Explorer view -->
+      <section id="view-explorer" class="h-full glass-d rounded-xl overflow-hidden relative glow-edge">
+        <canvas id="graph-canvas"></canvas>
+        <div class="absolute top-3 left-3 glass rounded-lg px-3 py-1.5 text-[10px] text-cyan-100/80">ลาก = หมุน · สกอร์ล = ซูม · คลิกโหนด = รายละเอียด</div>
+        <div class="absolute bottom-3 left-3 flex gap-3 text-[10px]">
+          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#f5c542;box-shadow:0 0 8px #f5c542"></span> งานวิจัย</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#22d3ee;box-shadow:0 0 8px #22d3ee"></span> ระเบียบวิธี</span>
+        </div>
+      </section>
+
+      <!-- Cataloger view (upload + matrix + draft) -->
+      <section id="view-catalog" class="h-full glass-d rounded-xl p-4 overflow-y-auto scroll-thin hidden">
+        <h2 class="text-sm font-semibold text-gold mb-1">⚙ AI Auto-Cataloger — นำเข้าและวิเคราะห์งานวิจัย</h2>
+        <p class="text-[11px] text-cyan-200/60 mb-3">อัปโหลด PDF/TXT ≥ 3 ฉบับ · ประมวลผลในเบราว์เซอร์ ไม่ส่งไฟล์ออกนอกเครื่อง</p>
+
+        <label id="dz" class="dz glass rounded-xl p-6 flex flex-col items-center text-center cursor-pointer border-2 border-dashed border-cyan-node/30 transition">
+          <span class="text-3xl mb-1">⬆</span>
+          <p class="text-xs font-semibold">ลากไฟล์มาวาง หรือ <span class="text-gold underline">เลือกไฟล์</span></p>
+          <p class="text-[10px] text-cyan-200/50 mt-1">PDF / TXT · หลายไฟล์พร้อมกัน</p>
+          <input id="file-input" type="file" accept=".pdf,.txt,application/pdf,text/plain" multiple class="hidden" />
+        </label>
+        <div class="flex flex-wrap gap-2 mt-3">
+          <button id="btn-sample" class="glass chip text-xs px-3 py-2 rounded-lg">โหลดตัวอย่าง 6 สาขา</button>
+          <button id="btn-clear" class="glass chip text-xs px-3 py-2 rounded-lg">ล้างทั้งหมด</button>
+          <span id="ingest-status" class="text-[11px] text-cyan-200/60 self-center"></span>
+        </div>
+
+        <!-- Matrix -->
+        <h3 class="text-xs font-semibold text-gold mt-5 mb-2">ตารางเปรียบเทียบระเบียบวิธีวิจัย (5 ประเด็น)</h3>
+        <div id="matrix-empty" class="text-[11px] text-cyan-200/50 py-4">ยังไม่มีข้อมูล — อัปโหลดหรือกดโหลดตัวอย่าง</div>
+        <div id="matrix-wrap" class="overflow-x-auto scroll-thin rounded-lg hidden">
+          <table class="min-w-full text-[11px]">
+            <thead><tr class="text-left text-cyan-200/80 border-b border-cyan-node/20">
+              <th class="p-2">งานวิจัย</th><th class="p-2">วัตถุประสงค์</th><th class="p-2">ชุดข้อมูล/กลุ่มตัวอย่าง</th>
+              <th class="p-2">ระเบียบวิธี</th><th class="p-2">ผลสำคัญ</th><th class="p-2">ข้อจำกัด</th>
+            </tr></thead>
+            <tbody id="matrix-body" class="divide-y divide-white/5"></tbody>
+          </table>
+        </div>
+
+        <!-- Draft -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mt-5 mb-2">
+          <h3 class="text-xs font-semibold text-gold">ร่างบททบทวนวรรณกรรม (แก้ไขได้)</h3>
+          <div class="flex gap-1.5">
+            <button id="btn-regenerate" class="glass chip text-[11px] px-2.5 py-1.5 rounded-lg">↺ ร่างใหม่</button>
+            <button id="btn-copy" class="glass chip text-[11px] px-2.5 py-1.5 rounded-lg">📋 คัดลอก</button>
+            <button id="btn-apa" class="chip text-[11px] px-2.5 py-1.5 rounded-lg bg-gold text-slate-deep font-semibold">⬇ APA</button>
+          </div>
+        </div>
+        <div id="draft" contenteditable="true" class="glass rounded-lg p-4 text-[13px] leading-relaxed min-h-[120px] scroll-thin">
+          <span class="text-cyan-200/50">อัปโหลดงานวิจัยเพื่อให้ระบบร่างบททบทวนวรรณกรรมอัตโนมัติ…</span>
+        </div>
+      </section>
+
+      <!-- Dashboard view -->
+      <section id="view-dashboard" class="h-full glass-d rounded-xl p-5 overflow-y-auto scroll-thin hidden">
+        <div class="flex items-center justify-between mb-1">
+          <h2 class="text-sm font-semibold text-gold">📊 Usage Dashboard — สถิติผู้เข้าใช้บริการ</h2>
+          <button id="btn-reset-stats" class="glass chip text-[10px] px-2.5 py-1.5 rounded-lg text-cyan-200">⟳ ล้างสถิติ</button>
+        </div>
+        <p class="text-[11px] text-cyan-200/60 mb-4">บันทึกการเข้าใช้แยกตามประเภทผู้ใช้ (บันทึกในเครื่องนี้ · localStorage)</p>
+
+        <!-- Stat cards -->
+        <div id="stat-cards" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5"></div>
+
+        <div class="grid lg:grid-cols-2 gap-4">
+          <!-- Donut: by type -->
+          <div class="glass rounded-xl p-4">
+            <h3 class="text-xs font-semibold text-cyan-node mb-3">สัดส่วนตามประเภทผู้ใช้</h3>
+            <div class="flex items-center gap-4">
+              <svg id="donut" viewBox="0 0 120 120" class="w-32 h-32 shrink-0"></svg>
+              <div id="donut-legend" class="text-[11px] space-y-1.5 flex-1"></div>
+            </div>
+          </div>
+          <!-- Bar: last 7 days -->
+          <div class="glass rounded-xl p-4">
+            <h3 class="text-xs font-semibold text-cyan-node mb-3">การเข้าใช้ย้อนหลัง 7 วัน</h3>
+            <div id="bar-chart" class="flex items-end justify-between gap-1.5 h-32"></div>
+          </div>
+        </div>
+
+        <!-- Recent log -->
+        <div class="glass rounded-xl p-4 mt-4">
+          <h3 class="text-xs font-semibold text-cyan-node mb-2">บันทึกการเข้าใช้ล่าสุด</h3>
+          <div class="overflow-x-auto scroll-thin">
+            <table class="min-w-full text-[11px]">
+              <thead><tr class="text-left text-cyan-200/70 border-b border-cyan-node/20">
+                <th class="p-2">เวลา</th><th class="p-2">ประเภท</th><th class="p-2">ชื่อ / รหัส</th>
+              </tr></thead>
+              <tbody id="log-body" class="divide-y divide-white/5"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===== RIGHT: Detail panel ===== -->
+    <aside class="col-span-3 min-h-0">
+      <section id="detail-panel" class="h-full glass-d rounded-xl p-4 overflow-y-auto scroll-thin">
+        <div id="detail-empty" class="h-full flex flex-col items-center justify-center text-center text-cyan-200/50">
+          <span class="text-4xl mb-3">🛰️</span>
+          <p class="text-xs">คลิกที่โหนดในกราฟ<br/>หรือรายการโดเมน<br/>เพื่อดูรายละเอียดงานวิจัย</p>
+        </div>
+        <div id="detail-content" class="hidden"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div id="login-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70">
+  <div class="glass-d rounded-2xl max-w-md w-full p-6">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="font-semibold text-gold inline-flex items-center gap-2">🔑 เข้าสู่ระบบผู้ใช้บริการ</h3>
+      <button id="login-close" class="text-cyan-200/70 hover:text-white text-2xl leading-none">×</button>
+    </div>
+    <p class="text-[11px] text-cyan-200/60 mb-4">เลือกประเภทผู้ใช้เพื่อบันทึกสถิติการเข้าใช้บริการห้องสมุด</p>
+
+    <div class="grid grid-cols-3 gap-2 mb-4">
+      <button class="role-btn glass chip rounded-xl p-3 flex flex-col items-center gap-1 border border-transparent" data-role="อาจารย์">
+        <span class="text-2xl">👩‍🏫</span><span class="text-[11px] font-semibold">อาจารย์</span>
+      </button>
+      <button class="role-btn glass chip rounded-xl p-3 flex flex-col items-center gap-1 border border-transparent" data-role="เจ้าหน้าที่">
+        <span class="text-2xl">🧑‍💼</span><span class="text-[11px] font-semibold">เจ้าหน้าที่</span>
+      </button>
+      <button class="role-btn glass chip rounded-xl p-3 flex flex-col items-center gap-1 border border-transparent" data-role="นักศึกษา">
+        <span class="text-2xl">🧑‍🎓</span><span class="text-[11px] font-semibold">นักศึกษา</span>
+      </button>
+    </div>
+
+    <label class="block text-[11px] text-cyan-200/70 mb-1">ชื่อ / รหัส (ไม่บังคับ)</label>
+    <input id="login-name" type="text" placeholder="เช่น สมชาย ใจดี หรือ 6512345"
+      class="w-full glass rounded-lg px-3 py-2.5 text-xs placeholder:text-cyan-200/40 focus:outline-none focus:ring-2 focus:ring-cyan-node/50 mb-2" />
+    <p id="login-hint" class="text-[11px] text-orange-300 mb-3 h-4"></p>
+
+    <div class="flex gap-2">
+      <button id="login-submit" class="flex-1 bg-gold text-slate-deep font-semibold px-4 py-2.5 rounded-lg text-sm">เข้าสู่ระบบ &amp; บันทึกการเข้าใช้</button>
+      <button id="logout-btn" class="glass chip px-4 py-2.5 rounded-lg text-sm text-cyan-200 hidden">ออกจากระบบ</button>
+    </div>
+    <button id="login-skip" class="w-full text-center text-[11px] text-cyan-200/50 hover:text-cyan-200 mt-3">เข้าใช้งานก่อนโดยไม่ระบุตัวตน →</button>
+  </div>
+</div>
+
+<!-- APA Modal -->
+<div id="apa-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60">
+  <div class="glass-d rounded-2xl max-w-2xl w-full p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gold">รายการอ้างอิง APA (APA 7th)</h3>
+      <button id="apa-close" class="text-cyan-200/70 hover:text-white text-2xl leading-none">×</button>
+    </div>
+    <pre id="apa-output" class="whitespace-pre-wrap text-sm glass rounded-xl p-4 scroll-thin max-h-[50vh] overflow-y-auto"></pre>
+    <div class="flex justify-end mt-4"><button id="apa-copy" class="bg-gold text-slate-deep px-4 py-2 rounded-lg text-sm font-semibold">คัดลอกทั้งหมด</button></div>
+  </div>
+</div>
+
+<script>
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ========================= State ========================= */
+let PAPERS = [], seq = 0, filterText = '';
+
+/* ========================= Sample data (6 สาขา) ========================= */
+const SAMPLES = [
+  { author:'Srisuwan', authorsFull:'นายฉลอง ยั่งยืน, นางสาววิภาวา รัตนมณี', year:2025, field:'ธรณีศาสตร์และพิพิธภัณฑ์',
+    title:'การสำรวจแร่รัตนชาติและโครงสร้างทางธรณีวิทยาบริเวณอำเภอบ่อพลอย จังหวัดกาญจนบุรี',
+    advisor:'ผศ.ดร.ธนินี ปัญญานนท์', program:'ธรณีศาสตร์ มหาวิทยาลัยมหิดล วิทยาเขตกาญจนบุรี (2568)',
+    objective:'ประเมินศักยภาพและการกระจายตัวของแหล่งแร่รัตนชาติเชิงพื้นที่',
+    dataset:'ตัวอย่างหิน 87 จุดสำรวจภาคสนาม + ภาพถ่ายดาวเทียม Sentinel-2',
+    method:'สำรวจภาคสนามร่วมกับการวิเคราะห์เชิงพื้นที่ด้วย GIS และ XRD',
+    findings:'พบแนวแหล่งแร่คุณภาพสูง 3 แนว สัมพันธ์กับรอยเลื่อนแนวตะวันตกเฉียงเหนือ',
+    limitation:'ครอบคลุมเฉพาะพื้นที่เข้าถึงได้ ขาดข้อมูลชั้นลึก',
+    methodology:'GIS / Spatial Analysis', keywords:['แร่รัตนชาติ','บ่อพลอย','ธรณีวิทยา','แร่พลอยไพลิน','สำรวจแหล่งแร่'], marc:'553.809593' },
+  { author:'Wattanakul', authorsFull:'Wattanakul, S., & Jaroensuk, N.', year:2566, field:'ชีววิทยาอนุรักษ์',
+    title:'ความหลากหลายของพรรณไม้และการประเมินภัยคุกคามในป่าผลัดใบเขตกาญจนบุรี',
+    advisor:'รศ.ดร.ประสาน จิตมั่น', program:'ชีววิทยาอนุรักษ์ MUKA (2566)',
+    objective:'จัดทำบัญชีความหลากหลายพืชและประเมินสถานะการอนุรักษ์',
+    dataset:'แปลงสำรวจถาวร 24 แปลง (6 เฮกตาร์) บันทึกพืช 412 ชนิด',
+    method:'วิธีแปลงตัวอย่างถาวร (Permanent Plot) + ดัชนี Shannon-Wiener',
+    findings:'พบพืชถิ่นเดียว 7 ชนิด และ 3 ชนิดอยู่ในสถานะเสี่ยงสูญพันธุ์',
+    limitation:'เก็บข้อมูลเพียง 2 ฤดูกาล', methodology:'Field Sampling',
+    keywords:['ความหลากหลาย','พรรณไม้','อนุรักษ์','ป่าผลัดใบ'], marc:'581.7' },
+  { author:'Phetlek', authorsFull:'Phetlek, A., Chaimongkol, R., & Suksai, T.', year:2567, field:'เทคโนโลยีอาหาร',
+    title:'การพัฒนาผลิตภัณฑ์เสริมโปรตีนจากพืชท้องถิ่นด้วยกระบวนการหมักควบคุม',
+    advisor:'ผศ.ดร.วิมล เพชรเลิศ', program:'เทคโนโลยีอาหาร MUKA (2567)',
+    objective:'พัฒนาและประเมินคุณภาพผลิตภัณฑ์โปรตีนจากพืชท้องถิ่น',
+    dataset:'ผู้ทดสอบชิม 120 คน + ตัวอย่างผลิตภัณฑ์ 5 สูตร',
+    method:'การทดลองแบบ RCBD + ประเมินประสาทสัมผัส 9-point Hedonic Scale',
+    findings:'สูตรหมัก 48 ชม. ได้คะแนนการยอมรับสูงสุด โปรตีนเพิ่มขึ้น 23%',
+    limitation:'ยังไม่ได้ทดสอบอายุการเก็บรักษาเชิงพาณิชย์', methodology:'Experimental (RCBD/Factorial)',
+    keywords:['โปรตีนพืช','การหมัก','นวัตกรรมอาหาร'], marc:'664.07' },
+  { author:'Jindarat', authorsFull:'Jindarat, K., & Pimpa, W.', year:2567, field:'ประวัติศาสตร์',
+    title:'ความทรงจำร่วมและการเล่าเรื่องของชุมชนริมทางรถไฟสายมรณะ จังหวัดกาญจนบุรี',
+    advisor:'รศ.ดร.สมเกียรติ วงศ์ไทย', program:'มนุษยศาสตร์ MUKA (2567)',
+    objective:'ศึกษาการประกอบสร้างความทรงจำร่วมและการเล่าเรื่องของชุมชน',
+    dataset:'ผู้ให้ข้อมูลหลัก 28 คน + เอกสารจดหมายเหตุช่วงสงคราม',
+    method:'การวิจัยเอกสารประวัติศาสตร์ร่วมกับการสัมภาษณ์เชิงลึก',
+    findings:'ความทรงจำร่วมถูกถ่ายทอดผ่านพิธีกรรมและพื้นที่เชิงสัญลักษณ์',
+    limitation:'ผู้ให้ข้อมูลรุ่นผู้ประสบเหตุการณ์มีจำกัด', methodology:'Documentary / Historical Analysis',
+    keywords:['ความทรงจำร่วม','ทางรถไฟสายมรณะ','ประวัติศาสตร์บอกเล่า'], marc:'959.3' },
+  { author:'Boonrueang', authorsFull:'Boonrueang, S., Thawee, N., & Maneerat, P.', year:2566, field:'ศึกษาศาสตร์',
+    title:'ผลของการจัดการเรียนรู้เชิงรุกต่อทักษะการคิดเชิงวิพากษ์ของนักศึกษาระดับปริญญาตรี',
+    advisor:'ผศ.ดร.นภา ทวีสุข', program:'ศึกษาศาสตร์ MUKA (2566)',
+    objective:'เปรียบเทียบทักษะการคิดเชิงวิพากษ์ก่อน-หลังการจัดการเรียนรู้เชิงรุก',
+    dataset:'นักศึกษา 2 กลุ่ม รวม 86 คน (ทดลอง/ควบคุม)',
+    method:'การวิจัยกึ่งทดลอง (quasi-experimental) + แบบทดสอบ',
+    findings:'กลุ่มเรียนเชิงรุกมีคะแนนการคิดเชิงวิพากษ์สูงกว่าอย่างมีนัยสำคัญ',
+    limitation:'ดำเนินการในรายวิชาและภาคเรียนเดียว', methodology:'Quasi-Experimental',
+    keywords:['การเรียนรู้เชิงรุก','การคิดเชิงวิพากษ์','อุดมศึกษา'], marc:'370.15' },
+  { author:'Chalermsak', authorsFull:'Chalermsak, A., & Rattana, D.', year:2567, field:'การท่องเที่ยว',
+    title:'ปัจจัยที่ส่งผลต่อความตั้งใจกลับมาเที่ยวซ้ำของนักท่องเที่ยวเชิงวัฒนธรรมในกาญจนบุรี',
+    advisor:'รศ.ดร.ดารณี รัตนา', program:'การจัดการการท่องเที่ยว MUKA (2567)',
+    objective:'วิเคราะห์ปัจจัยเชิงสาเหตุต่อความตั้งใจกลับมาเที่ยวซ้ำ',
+    dataset:'แบบสอบถามนักท่องเที่ยว 420 ชุด',
+    method:'การวิเคราะห์โมเดลสมการโครงสร้าง (SEM)',
+    findings:'คุณภาพประสบการณ์และความผูกพันกับสถานที่ส่งผลเชิงบวก',
+    limitation:'เก็บข้อมูลเฉพาะช่วงฤดูท่องเที่ยว', methodology:'Structural Equation Modeling (SEM)',
+    keywords:['ท่องเที่ยวเชิงวัฒนธรรม','เที่ยวซ้ำ','SEM'], marc:'338.4791' },
+];
+const HOT = ['พืชสมุนไพร','แร่รัตนชาติบ่อพลอย','เกษตรพื้นที่สูง MUKA','มะนาวป้องกันโรค','ความทรงจำร่วม','SEM ท่องเที่ยว'];
+
+/* ========================= Ingestion ========================= */
+async function handleFiles(fileList){
+  const files=[...fileList]; const st=document.getElementById('ingest-status'); let added=0;
+  for (const f of files){
+    st.textContent=`กำลังอ่าน: ${f.name}…`;
+    try{
+      let text = (f.type==='application/pdf'||/\.pdf$/i.test(f.name)) ? await extractPdfText(f) : await f.text();
+      PAPERS.push(analyzePaper(text, f.name)); added++;
+    }catch(e){ console.error(e); st.textContent=`⚠️ อ่าน ${f.name} ไม่สำเร็จ`; }
+  }
+  st.textContent=`เพิ่ม ${added} ไฟล์ · รวม ${PAPERS.length} ฉบับ`; refreshAll();
+}
+async function extractPdfText(file){
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  let text=''; const mx=Math.min(pdf.numPages,30);
+  for(let i=1;i<=mx;i++){ const pg=await pdf.getPage(i); const c=await pg.getTextContent(); text+=c.items.map(it=>it.str).join(' ')+'\n'; }
+  return text;
+}
+
+/* ========================= Extraction engine (ทดสอบแล้ว) ========================= */
+function analyzePaper(rawText, filename){
+  const text=(rawText||'').replace(/\u0000/g,' ').replace(/[ \t]+/g,' ');
+  const clean=text.replace(/\s+/g,' ').trim();
+  const title=guessTitle(text,filename);
+  const {author,authorsFull,year}=guessAuthorYear(text,filename);
+  return { id:'U'+(++seq), source:'upload', filename, title, author, authorsFull, year,
+    advisor:'—', program:'นำเข้าจากไฟล์', marc:'—', keywords:[],
+    field:guessField(clean),
+    // คำค้นภาษาไทยมาก่อน (TH-first) เพื่อให้ดึงเนื้อหาภาษาไทยเป็นหลัก ตามด้วย fallback อังกฤษ
+    objective:sectionSnippet(clean,['วัตถุประสงค์','ความมุ่งหมาย','เป้าหมายของการวิจัย','เป้าหมาย'],['objective','aim','purpose','goal'],'ไม่พบวัตถุประสงค์ชัดเจน'),
+    dataset:sectionSnippet(clean,['กลุ่มตัวอย่าง','กลุ่มเป้าหมาย','ประชากรและกลุ่มตัวอย่าง','ประชากร','ชุดข้อมูล'],['dataset','participants','sample','subjects','n ='],'ไม่ระบุชุดข้อมูล'),
+    method:sectionSnippet(clean,['ระเบียบวิธีวิจัย','วิธีดำเนินการวิจัย','วิธีการวิจัย','ระเบียบวิธี','วิธีดำเนินการ'],['methodology','materials and methods','method','experimental','procedure'],'ไม่พบส่วนระเบียบวิธี'),
+    findings:sectionSnippet(clean,['ผลการวิจัย','ผลการศึกษา','สรุปผลการวิจัย','ผลการทดลอง','ผลลัพธ์'],['results','findings','we found','showed that'],'ไม่พบผลการศึกษา'),
+    limitation:sectionSnippet(clean,['ข้อจำกัด','ข้อจำกัดของการวิจัย','ข้อเสนอแนะ','ขอบเขตของการวิจัย'],['limitation','constraint','future work'],'ไม่ระบุข้อจำกัด'),
+    methodology:guessMethodology(clean) };
+}
+function guessTitle(text,filename){
+  const lines=text.split(/\n|\.(?=\s|$)/).map(s=>s.trim()).filter(Boolean);
+  for(const ln of lines.slice(0,8)) if(ln.length>=20&&ln.length<=200&&!/^(abstract|บทคัดย่อ|doi|http)/i.test(ln)) return ln;
+  return filename.replace(/\.[^.]+$/,'');
+}
+function guessAuthorYear(text,filename){
+  let year=new Date().getFullYear();
+  const ym=text.match(/\b(19|20)\d{2}\b/), be=text.match(/\b(25[0-9]{2})\b/);
+  if(ym) year=+ym[0]; else if(be) year=+be[0]-543;
+
+  // คำที่ไม่ใช่ชื่อคน (สถาบัน/หน่วยงาน/หัวข้อ) — กันพลาดแบบ "Naresuan University"
+  const BAD=/(universit|college|faculty|department|institute|school|library|press|journal|proceeding|conference|มหาวิทยาลัย|คณะ|ภาควิชา|สถาบัน|ห้องสมุด|สำนัก|วิทยาลัย|วารสาร)/i;
+  const STOP=/^(The|This|Study|Review|Systematic|Effect|Effectiveness|Analysis|Development|Assessment|Impact|Low|High|Dose|Using|Toward|Towards|Abstract|Research|Article|Journal|And|With|From|Among)$/i;
+
+  let author='Unknown', authorsFull='';
+
+  // 1) ป้ายชื่อผู้แต่งภาษาไทยแบบชัดเจน: "โดย นายสมชาย ใจดี" / "ผู้วิจัย: นางสาว..."
+  const thLabel=text.match(/(?:โดย|ผู้วิจัย|ผู้จัดทำ|ผู้เขียน|จัดทำโดย)\s*[:：]?\s*((?:นาย|นาง|นางสาว|น\.ส\.|ดร\.|ผศ\.|รศ\.|ศ\.)?[\u0E00-\u0E7F]{2,}\s+[\u0E00-\u0E7F]{2,}(?:\s*(?:,|และ)\s*(?:นาย|นาง|นางสาว|น\.ส\.)?[\u0E00-\u0E7F]{2,}\s+[\u0E00-\u0E7F]{2,}){0,3})/);
+  if(thLabel){
+    authorsFull=thLabel[1].replace(/\s+/g,' ').trim();
+    const firstName=authorsFull.replace(/^(นาย|นาง|นางสาว|น\.ส\.|ดร\.|ผศ\.|รศ\.|ศ\.)\s*/,'').split(/\s+/)[0];
+    author=firstName||authorsFull.split(/\s+/)[0];
+  }
+
+  // 2) รูปแบบผู้แต่งอังกฤษ "Family, I." / "Family, I. I." (ข้ามถ้าเป็นสถาบัน)
+  if(author==='Unknown'){
+    const re=/\b([A-Z][a-z]{2,})\s*,\s*((?:[A-Z]\.\s*){1,3})/g; let m;
+    while((m=re.exec(text))){
+      const ctx=text.slice(Math.max(0,m.index-25), m.index+40);
+      if(STOP.test(m[1])||BAD.test(ctx)) continue;
+      author=m[1]; authorsFull=`${m[1]}, ${m[2].trim()}`; break;
+    }
+  }
+
+  // 3) ชื่อไทยติดกับปี พ.ศ. (ต้องไม่ใช่สถาบัน)
+  if(author==='Unknown'){
+    const m3=text.match(/((?:นาย|นาง|นางสาว|น\.ส\.)?[\u0E00-\u0E7F]{2,}\s+[\u0E00-\u0E7F]{2,})\s*,?\s*25[0-9]{2}/);
+    if(m3 && !BAD.test(m3[1])){ authorsFull=m3[1].trim(); author=authorsFull.replace(/^(นาย|นาง|นางสาว|น\.ส\.)\s*/,'').split(/\s+/)[0]; }
+  }
+
+  // 4) ชื่ออังกฤษใกล้ปี (ข้ามสถาบัน)
+  if(author==='Unknown'){
+    const re=/\b([A-Z][a-z]{2,})\b[^.\n]{0,40}?\b(?:19|20)\d{2}\b/g; let m;
+    while((m=re.exec(text))){ const ctx=text.slice(Math.max(0,m.index-25),m.index+30);
+      if(STOP.test(m[1])||BAD.test(ctx)) continue; author=m[1]; authorsFull=`${m[1]} et al.`; break; }
+  }
+
+  // 5) fallback: ชื่อไฟล์
+  if(author==='Unknown'){ const fn=filename.replace(/\.[^.]+$/,'').match(/[A-Za-z\u0E00-\u0E7F]{3,}/); if(fn&&!STOP.test(fn[0])){ author=fn[0]; authorsFull=fn[0]; } }
+
+  if(author==='Unknown'){ author='Unknown'; authorsFull='Unknown Author'; }
+  else if(!authorsFull) authorsFull=`${author} et al.`;
+  return { author, authorsFull, year };
+}
+function guessField(text){
+  const t=text.toLowerCase();
+  const map=[
+    ['การแพทย์ / สาธารณสุข',['clinical','patient','medic','disease','therapy','treatment','trial','diagnos','health','nursing','epidemiolog','pharmac','ผู้ป่วย','การรักษา','คลินิก','สุขภาพ','สาธารณสุข','โรค','พยาบาล','เภสัช','บริการสุขภาพ']],
+    ['ธรณีศาสตร์และพิพิธภัณฑ์',['geolog','mineral','karst','rock','sediment','tectonic','gem','ธรณี','แร่','หิน','ตะกอน','รัตนชาติ','พลอย']],
+    ['ชีววิทยาอนุรักษ์',['biodiversity','conservation','species','ecolog','forest','wildlife','habitat','ชีววิทยา','อนุรักษ์','ความหลากหลาย','ระบบนิเวศ','สัตว์ป่า','พรรณไม้']],
+    ['เทคโนโลยีอาหาร',['food','fermentation','protein','nutrition','sensory','culinary','อาหาร','โปรตีน','หมัก','โภชนาการ']],
+    ['วิศวกรรม / เทคโนโลยี',['engineering','algorithm','software','machine learning','deep learning','iot','sensor','robot','วิศวกรรม','อัลกอริทึม','ซอฟต์แวร์','ปัญญาประดิษฐ์']],
+    ['วิศวกรรมสิ่งแวดล้อม',['water quality','environment','pollution','contamin','wastewater','emission','สิ่งแวดล้อม','มลพิษ','คุณภาพน้ำ','ของเสีย']],
+    ['วิทยาศาสตร์การเกษตร',['agricultur','crop','soil','yield','livestock','irrigation','เกษตร','ดิน','พืชผล','ปศุสัตว์','ชลประทาน']],
+    ['ศึกษาศาสตร์',['education','learning','teaching','curriculum','student','classroom','pedagog','ศึกษาศาสตร์','การศึกษา','การเรียนรู้','การสอน','หลักสูตร','ผู้เรียน','นักเรียน','นักศึกษา']],
+    ['บริหารธุรกิจ / การจัดการ',['management','business','marketing','consumer','organization','entrepreneur','supply chain','human resource','บริหารธุรกิจ','การจัดการ','การตลาด','ผู้บริโภค','องค์กร','ทรัพยากรมนุษย์']],
+    ['บัญชี / การเงิน',['accounting','finance','financial','audit','investment','banking','บัญชี','การเงิน','การลงทุน','ตรวจสอบบัญชี']],
+    ['เศรษฐศาสตร์',['economic','econometr','gdp','market demand','labor market','เศรษฐศาสตร์','เศรษฐกิจ','อุปสงค์','ตลาดแรงงาน']],
+    ['รัฐศาสตร์ / นโยบายสาธารณะ',['political','governance','public policy','democracy','election','รัฐศาสตร์','การเมือง','ธรรมาภิบาล','นโยบายสาธารณะ']],
+    ['นิติศาสตร์ / กฎหมาย',['law','legal','legislation','juris','rights','regulation','นิติศาสตร์','กฎหมาย','สิทธิ','ระเบียบ','ข้อบังคับ']],
+    ['สังคมวิทยา / มานุษยวิทยา',['sociolog','anthropolog','community','social capital','ethnic','kinship','สังคมวิทยา','มานุษยวิทยา','ชุมชน','ชาติพันธุ์']],
+    ['จิตวิทยา',['psycholog','cognitive','behavior','mental','emotion','จิตวิทยา','พฤติกรรม','การรับรู้','อารมณ์']],
+    ['ภาษาศาสตร์ / ภาษา',['linguistic','language','phonolog','syntax','semantic','discourse','translation','ภาษาศาสตร์','ภาษา','วากยสัมพันธ์','อรรถศาสตร์','การแปล']],
+    ['วรรณกรรม / วรรณคดี',['literature','literary','poetry','novel','narrative','fiction','วรรณกรรม','วรรณคดี','กวีนิพนธ์','นวนิยาย','เรื่องเล่า']],
+    ['ประวัติศาสตร์',['history','historical','archive','dynasty','colonial','ancient','ประวัติศาสตร์','โบราณ','อาณานิคม','จดหมายเหตุ','ความทรงจำ']],
+    ['ปรัชญา / ศาสนา',['philosoph','ethic','metaphys','religio','buddhis','theolog','ปรัชญา','จริยธรรม','ศาสนา','พุทธ']],
+    ['ศิลปะ / วัฒนธรรม / ดนตรี',['art','cultural','heritage','music','performance','aesthetic','museum','ศิลปะ','วัฒนธรรม','มรดก','ดนตรี','นาฏศิลป์','พิพิธภัณฑ์']],
+    ['การท่องเที่ยว / บริการ',['tourism','hospitality','tourist','destination','การท่องเที่ยว','นักท่องเที่ยว','การโรงแรม','แหล่งท่องเที่ยว']],
+    ['บรรณารักษ์ / สารสนเทศ',['library','information science','archiv','bibliometric','cataloging','บรรณารักษ','สารสนเทศ','ห้องสมุด']],
+  ];
+  let best=null,bs=0; for(const[l,kw]of map){const sc=kw.reduce((s,k)=>s+(t.includes(k)?1:0),0); if(sc>bs){bs=sc;best=l;}}
+  return best||'สหวิทยาการ / ทั่วไป';
+}
+function guessMethodology(text){
+  const t=text.toLowerCase();
+  const pat=[
+    ['Randomized Controlled Trial',['randomized controlled','rct','randomised']],
+    ['Systematic Review / Meta-analysis',['systematic review','meta-analysis','meta analysis','prisma','การทบทวนอย่างเป็นระบบ']],
+    ['Cohort Study',['cohort','รุ่นติดตาม']], ['Case-Control Study',['case-control','case control']],
+    ['Experimental (RCBD/Factorial)',['rcbd','factorial','completely randomized','true experiment','การทดลองแบบสุ่ม','เชิงทดลอง']],
+    ['Quasi-Experimental',['quasi-experiment','quasi experiment','pretest-posttest','pre-test post-test','กึ่งทดลอง','ก่อนเรียนหลังเรียน','ก่อน-หลัง']],
+    ['Cross-sectional Survey',['cross-sectional','survey research','questionnaire survey','แบบสอบถาม','การสำรวจ','เชิงสำรวจ']],
+    ['Correlational / Regression',['correlation','regression','multiple regression','สหสัมพันธ์','การถดถอย']],
+    ['Structural Equation Modeling (SEM)',['structural equation','sem','path analysis','confirmatory factor','โมเดลสมการโครงสร้าง','การวิเคราะห์เส้นทาง']],
+    ['Qualitative Interview',['in-depth interview','semi-structured interview','interview','สัมภาษณ์เชิงลึก','สัมภาษณ์']],
+    ['Thematic Analysis',['thematic analysis','การวิเคราะห์แก่นสาระ']],
+    ['Ethnography / Field Study',['ethnograph','participant observation','fieldwork','ชาติพันธุ์วรรณา','การสังเกตแบบมีส่วนร่วม']],
+    ['Grounded Theory',['grounded theory','ทฤษฎีฐานราก']], ['Case Study',['case study','กรณีศึกษา']],
+    ['Focus Group',['focus group','สนทนากลุ่ม']],
+    ['Content / Discourse Analysis',['content analysis','discourse analysis','textual analysis','corpus','การวิเคราะห์เนื้อหา','วาทกรรม']],
+    ['Mixed-Methods',['mixed method','mixed-methods','triangulation','แบบผสม','พหุวิธี','สามเส้า']],
+    ['Documentary / Historical Analysis',['documentary research','historical analysis','archival','primary sources','วิจัยเอกสาร','เอกสารชั้นต้น','ประวัติศาสตร์','จดหมายเหตุ']],
+    ['Hermeneutic / Interpretive',['hermeneutic','interpretive','phenomenolog','ตีความ','ปรากฏการณ์วิทยา']],
+    ['Comparative Study',['comparative study','comparative analysis','การศึกษาเปรียบเทียบ','เชิงเปรียบเทียบ']],
+    ['GIS / Spatial Analysis',['gis','spatial analysis','remote sensing','ภาพถ่ายดาวเทียม','เชิงพื้นที่']],
+    ['Field Sampling',['field survey','permanent plot','sampling plot','สำรวจภาคสนาม','แปลงตัวอย่าง']],
+    ['Simulation / Modeling',['simulation','numerical model','qual2k','computational','แบบจำลอง','การจำลอง']],
+    ['Action Research',['action research','participatory action','วิจัยเชิงปฏิบัติการ']],
+    ['R&D / Development Research',['research and development','r&d','design-based','การวิจัยและพัฒนา','วิจัยเชิงพัฒนา']],
+  ];
+  let best=null,bs=0; for(const[l,kw]of pat){const sc=kw.reduce((s,k)=>s+(t.includes(k)?1:0),0); if(sc>bs){bs=sc;best=l;}}
+  return best||'ระเบียบวิธีอื่น ๆ';
+}
+function sectionSnippet(text,thKeywords,enKeywords,fb){
+  const lw=text.toLowerCase();
+  // หัวข้ออื่น ๆ ที่ใช้เป็น "จุดตัด" ไม่ให้ snippet ลามข้ามหัวข้อ
+  const SECTION_STOPS=['วัตถุประสงค์','ความมุ่งหมาย','สมมติฐาน','กลุ่มตัวอย่าง','กลุ่มเป้าหมาย','ประชากร','ชุดข้อมูล','ขอบเขต','ระเบียบวิธีวิจัย','วิธีดำเนินการวิจัย','วิธีการวิจัย','ระเบียบวิธี','วิธีดำเนินการ','เครื่องมือ','ผลการวิจัย','ผลการศึกษา','สรุปผลการวิจัย','ผลการทดลอง','อภิปรายผล','ข้อจำกัด','ข้อเสนอแนะ','กิตติกรรมประกาศ','บรรณานุกรม','เอกสารอ้างอิง'];
+  function cutAtNextSection(s, selfKw){
+    let end=s.length;
+    for(const st of SECTION_STOPS){
+      if(st===selfKw) continue;
+      const p=s.indexOf(st);
+      if(p>8 && p<end) end=p;   // >8 กันตัดทันทีถ้าหัวข้อซ้ำ
+    }
+    return s.slice(0,end).trim();
+  }
+  // 1) ลองคำค้นภาษาไทยก่อน แล้วดึง "เฉพาะช่วงภาษาไทย" ใต้หัวข้อนั้น (ตัดก่อนถึงหัวข้อถัดไป)
+  for(const kw of thKeywords){
+    const i=text.indexOf(kw);
+    if(i!==-1){
+      let rest=text.slice(i+kw.length).replace(/^[\s:：.\-–—)\]๐-๙\d.]+/,'');
+      rest=cutAtNextSection(rest, kw);
+      const th=extractThaiRun(rest);
+      if(th && th.length>=12) return clampLen(th);
+      const sn=rest.slice(0,260).replace(/\s+/g,' ').trim();
+      if(sn && sn.length>=8) return clampLen(sn);
+    }
+  }
+  // 2) ถ้าไม่พบหัวข้อไทย ลองหา "ย่อหน้าไทย" ที่มีคำค้นอังกฤษใกล้ ๆ → คืนช่วงไทยแทน
+  for(const kw of enKeywords){
+    const i=lw.indexOf(kw.toLowerCase());
+    if(i!==-1){
+      const around=text.slice(Math.max(0,i-40), i+400);
+      const th=extractThaiRun(around);
+      if(th && th.length>=20) return clampLen(th);  // ให้ความสำคัญกับไทยก่อน
+      const sn=text.slice(i,i+260).replace(/\s+/g,' ').trim();
+      return clampLen(sn);
+    }
+  }
+  return fb;
+}
+// ดึงประโยคภาษาไทย โดยยอมให้มีคำอังกฤษ/ตัวย่อ/ตัวเลขแทรกในประโยคได้ (เช่น RCBD, Shannon-Wiener)
+// เลือก "รันแรก" ที่ยาวพอ เพื่อไม่ให้ข้ามประโยคต้นไป
+function extractThaiRun(s){
+  // อนุญาต: อักษรไทย + ช่องว่าง + เลข + เครื่องหมาย + คำอังกฤษสั้น ๆ ที่แทรกกลาง
+  const re=/[\u0E00-\u0E7F][\u0E00-\u0E7F0-9๐-๙\s.,()%/\-–:]*(?:[A-Za-z0-9][A-Za-z0-9.\-]*\s*[\u0E00-\u0E7F0-9๐-๙\s.,()%/\-–:]*)*/g;
+  const matches=s.match(re);
+  if(!matches) return '';
+  // เลือกรันแรกที่มีอักษรไทยพอสมควร (>=12 ตัวอักษรไทย)
+  for(const m of matches){
+    const thaiCount=(m.match(/[\u0E00-\u0E7F]/g)||[]).length;
+    if(thaiCount>=12) return m.trim();
+  }
+  return matches.sort((a,b)=>b.length-a.length)[0].trim();
+}
+function clampLen(s){ s=s.replace(/\s+/g,' ').trim(); return s.length>230 ? s.slice(0,230).replace(/\s\S*$/,'')+'…' : s; }
+
+/* ========================= Samples ========================= */
+function loadSamples(){ SAMPLES.forEach(s=>PAPERS.push({...s,id:'S'+(++seq),source:'sample'})); document.getElementById('ingest-status').textContent=`โหลดตัวอย่าง ${SAMPLES.length} ฉบับ`; refreshAll(); }
+
+/* ========================= Render: domains, matrix, draft ========================= */
+function visiblePapers(){ if(!filterText) return PAPERS; const q=filterText.toLowerCase();
+  return PAPERS.filter(p=>(p.title+p.field+(p.keywords||[]).join(' ')+p.authorsFull).toLowerCase().includes(q)); }
+
+function renderDomains(){
+  const groups={}; visiblePapers().forEach(p=>{ (groups[p.field]=groups[p.field]||[]).push(p); });
+  const el=document.getElementById('domain-list');
+  const fields=Object.keys(groups);
+  document.getElementById('node-count').textContent=`${visiblePapers().length} NODES`;
+  document.getElementById('lib-index').textContent=(1414+PAPERS.length);
+  if(!fields.length){ el.innerHTML='<p class="text-[11px] text-cyan-200/40 py-4">ยังไม่มีข้อมูล — ไปที่แท็บ AI Auto-Cataloger เพื่อโหลดตัวอย่าง/อัปโหลด</p>'; return; }
+  el.innerHTML=fields.map((f,i)=>{
+    const color=['#f5c542','#34d399','#22d3ee','#a78bfa','#fb923c','#f472b6'][i%6];
+    return `<div>
+      <button class="dom-head w-full glass rounded-lg p-2.5 flex items-center justify-between text-left chip" data-field="${f}">
+        <span class="flex items-center gap-2 text-[11px] font-semibold"><span class="h-2.5 w-2.5 rounded-full" style="background:${color};box-shadow:0 0 8px ${color}"></span>${f}</span>
+        <span class="text-[9px] px-1.5 py-0.5 rounded bg-mahidol/60 text-gold">${groups[f].length} Papers</span>
+      </button>
+      <div class="pl-4 mt-1 space-y-1">
+        ${groups[f].map(p=>`<button class="paper-item w-full text-left text-[10px] text-cyan-100/70 hover:text-gold px-2 py-1 rounded hover:bg-white/5" data-id="${p.id}">• ${p.title.slice(0,46)}${p.title.length>46?'…':''}</button>`).join('')}
+      </div></div>`;
+  }).join('');
+  el.querySelectorAll('.paper-item').forEach(b=>b.addEventListener('click',()=>{ const p=PAPERS.find(x=>x.id===b.dataset.id); if(p) showDetail(p); highlightNodeById(p.id); }));
+}
+function renderMatrix(){
+  const vp=visiblePapers(); const empty=document.getElementById('matrix-empty'), wrap=document.getElementById('matrix-wrap');
+  if(!vp.length){ empty.classList.remove('hidden'); wrap.classList.add('hidden'); return; }
+  empty.classList.add('hidden'); wrap.classList.remove('hidden');
+  document.getElementById('matrix-body').innerHTML=vp.map(p=>`<tr class="align-top hover:bg-white/5">
+    <td class="p-2"><span class="font-semibold text-gold">[${p.author} et al., ${p.year}]</span><div class="text-[9px] text-cyan-200/50 mt-0.5">${p.field}</div></td>
+    <td class="p-2 text-cyan-50/90">${p.objective}</td><td class="p-2 text-cyan-50/90">${p.dataset}</td>
+    <td class="p-2 text-cyan-50/90">${p.method}</td><td class="p-2 text-cyan-50/90">${p.findings}</td>
+    <td class="p-2 text-cyan-50/70">${p.limitation}</td></tr>`).join('');
+}
+function buildDraft(){
+  const vp=visiblePapers(); if(!vp.length) return '<span class="text-cyan-200/50">อัปโหลดงานวิจัยเพื่อให้ระบบร่างบททบทวนวรรณกรรมอัตโนมัติ…</span>';
+  const fields=[...new Set(vp.map(p=>p.field))];
+  const intro=`การทบทวนวรรณกรรมจากงานวิจัย ${vp.length} ฉบับ ครอบคลุมสาขา${fields.join(' · ')} สะท้อนความหลากหลายของระเบียบวิธีวิจัยที่ใช้ตอบโจทย์ในแต่ละบริบท `;
+  const body=vp.map((p,i)=>`${i===0?'โดยเริ่มจาก':(i===vp.length-1?'และสุดท้าย':'ต่อมา')} ${p.title} ซึ่งใช้ระเบียบวิธี ${p.methodology} <span class="citation" title="${p.authorsFull} (${p.year})">[${p.author} et al., ${p.year}]</span>`).join(' ');
+  const methods=[...new Set(vp.map(p=>p.methodology))];
+  return `<p>${intro}${body}. เมื่อพิจารณาภาพรวม พบการใช้ระเบียบวิธีหลากหลาย ได้แก่ ${methods.join(', ')} ซึ่งช่วยให้เห็นช่องว่างขององค์ความรู้และทิศทางการวิจัยต่อยอดได้ชัดเจนยิ่งขึ้น</p>`;
+}
+function renderDraft(){ document.getElementById('draft').innerHTML=buildDraft(); }
+function toAPA(p){ return `${p.authorsFull} (${p.year}). ${p.title}. ${p.source==='upload'?'อ้างอิงจากไฟล์ที่อัปโหลด':'Mahidol University, Kanchanaburi Campus'}.`; }
+function renderAPA(){ document.getElementById('apa-output').textContent=[...visiblePapers()].sort((a,b)=>a.author.localeCompare(b.author)).map(toAPA).join('\n\n')||'(ยังไม่มีข้อมูล)'; }
+
+/* ========================= Detail panel ========================= */
+function showDetail(p){
+  document.getElementById('detail-empty').classList.add('hidden');
+  const el=document.getElementById('detail-content'); el.classList.remove('hidden'); el.classList.remove('panel-enter'); void el.offsetWidth; el.classList.add('panel-enter');
+  el.innerHTML=`
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-[10px] px-2 py-0.5 rounded-full bg-gold/20 text-gold inline-flex items-center gap-1">● ${p.field}</span>
+      <span class="text-[9px] text-cyan-200/50">MARC21: ${p.marc||'—'}</span>
+    </div>
+    <h3 class="text-sm font-bold leading-snug mb-3">${p.title}</h3>
+    <div class="space-y-1.5 text-[11px] mb-3">
+      <div class="flex gap-2"><span class="text-cyan-node">👤 ผู้จัดทำ:</span><span class="text-cyan-50/90">${p.authorsFull}</span></div>
+      <div class="flex gap-2"><span class="text-cyan-node">🎓 อาจารย์ที่ปรึกษา:</span><span class="text-cyan-50/90">${p.advisor||'—'}</span></div>
+      <div class="flex gap-2"><span class="text-cyan-node">📘 หลักสูตร:</span><span class="text-cyan-50/90">${p.program||'—'}</span></div>
+    </div>
+    <div class="glass rounded-lg p-3 mb-3">
+      <p class="text-[11px] font-semibold text-emerald-300 mb-1.5">✦ Kiro AI Executive Summary (บทสรุปผู้บริหาร)</p>
+      <p class="text-[11px] text-cyan-50/85 leading-relaxed">${p.objective} โดยใช้${p.method} ผลการศึกษาพบว่า ${p.findings}</p>
+    </div>
+    <div class="mb-3">
+      <p class="text-[11px] font-semibold text-cyan-node mb-1.5">🏷️ คำสำคัญ (Keywords):</p>
+      <div class="flex flex-wrap gap-1.5">${(p.keywords&&p.keywords.length?p.keywords:[p.methodology]).map(k=>`<span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-node/15 text-cyan-200">#${k}</span>`).join('')}</div>
+    </div>
+    <dl class="space-y-2 text-[11px] mb-4">
+      <div><dt class="text-cyan-300/80">ระเบียบวิธีวิจัย</dt><dd class="text-cyan-50/90">${p.method}</dd></div>
+      <div><dt class="text-cyan-300/80">ข้อจำกัด</dt><dd class="text-cyan-50/70">${p.limitation}</dd></div>
+    </dl>
+    <div class="grid grid-cols-2 gap-2">
+      <button class="cite-btn glass chip text-[11px] px-3 py-2.5 rounded-lg" data-id="${p.id}">❝ คัดลอกรายการอ้างอิง</button>
+      <button class="pdf-btn chip text-[11px] px-3 py-2.5 rounded-lg bg-gold text-slate-deep font-semibold" data-id="${p.id}">⬇ ดาวน์โหลด PDF</button>
+    </div>`;
+  el.querySelector('.cite-btn').addEventListener('click',e=>copyText(toAPA(p),e.target,'คัดลอกแล้ว ✓'));
+  el.querySelector('.pdf-btn').addEventListener('click',()=>exportSummaryHTML(p));
+}
+// "ดาวน์โหลด PDF" = เปิดสรุปในหน้าต่างใหม่พร้อมสั่งพิมพ์ (บันทึกเป็น PDF ได้จริงจากเบราว์เซอร์)
+function exportSummaryHTML(p){
+  const w=window.open('','_blank'); if(!w) return;
+  w.document.write(`<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${p.title}</title>
+  <style>body{font-family:'Sarabun',system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 24px;color:#111;line-height:1.6}
+  h1{color:#002366;font-size:20px}.k{color:#555;font-weight:600}.badge{display:inline-block;background:#002366;color:#f5c542;padding:2px 10px;border-radius:12px;font-size:12px}
+  .sec{margin:14px 0}.muted{color:#666;font-size:13px}hr{border:none;border-top:1px solid #ddd;margin:20px 0}</style></head><body>
+  <span class="badge">${p.field}</span> <span class="muted">MARC21: ${p.marc||'—'}</span>
+  <h1>${p.title}</h1>
+  <div class="sec"><span class="k">ผู้จัดทำ:</span> ${p.authorsFull} (${p.year})</div>
+  <div class="sec"><span class="k">อาจารย์ที่ปรึกษา:</span> ${p.advisor||'—'}</div>
+  <div class="sec"><span class="k">หลักสูตร:</span> ${p.program||'—'}</div><hr>
+  <div class="sec"><span class="k">วัตถุประสงค์:</span> ${p.objective}</div>
+  <div class="sec"><span class="k">ชุดข้อมูล/กลุ่มตัวอย่าง:</span> ${p.dataset}</div>
+  <div class="sec"><span class="k">ระเบียบวิธีวิจัย:</span> ${p.method} (${p.methodology})</div>
+  <div class="sec"><span class="k">ผลการศึกษาสำคัญ:</span> ${p.findings}</div>
+  <div class="sec"><span class="k">ข้อจำกัด:</span> ${p.limitation}</div><hr>
+  <div class="sec"><span class="k">การอ้างอิง (APA):</span><br>${toAPA(p)}</div>
+  <p class="muted">สร้างโดย LIKA Nexus · ห้องสมุดวิทยาเขตกาญจนบุรี</p>
+  <script>setTimeout(()=>window.print(),400)<\/script></body></html>`);
+  w.document.close();
+}
+
+/* ========================= Three.js graph ========================= */
+let renderer,scene,camera,controls,raycaster,mouse,graphGroup,stars,nodeMeshes=[],selected=null;
+function buildGraphData(){
+  const vp=visiblePapers(); const nodes=[],edges=[]; const R=15;
+  vp.forEach((p,i)=>{ const a=(i/Math.max(vp.length,1))*Math.PI*2, r=R+(i%2)*3;
+    nodes.push({key:p.id,type:'paper',label:`[${p.author} et al., ${p.year}]`,detail:p,pos:[Math.cos(a)*r,(i-vp.length/2)*2,Math.sin(a)*r]}); });
+  const mm={}; vp.forEach(p=>{ (mm[p.methodology]=mm[p.methodology]||[]).push(p.id); });
+  Object.keys(mm).forEach((m,i,arr)=>{ const a=(i/arr.length)*Math.PI*2+.6, key='M'+i;
+    nodes.push({key,type:'method',label:m,detail:{methodology:m,usedBy:mm[m]},pos:[Math.cos(a)*(R*.4),(i-arr.length/2)*1.7,Math.sin(a)*(R*.4)]});
+    mm[m].forEach(pid=>edges.push([pid,key])); });
+  return {nodes,edges};
+}
+function clearGraph(){ if(!graphGroup)return; while(graphGroup.children.length){ const c=graphGroup.children.pop(); if(c.geometry)c.geometry.dispose(); if(c.material)c.material.dispose(); } nodeMeshes=[]; selected=null; }
+function populateGraph(){
+  if(!graphGroup)return; const{nodes,edges}=buildGraphData(); const by={}; nodes.forEach(n=>by[n.key]=n);
+  edges.forEach(([a,b])=>{ const pa=by[a].pos,pb=by[b].pos;
+    const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...pa),new THREE.Vector3(...pb)]);
+    graphGroup.add(new THREE.Line(g,new THREE.LineBasicMaterial({color:0x3b82f6,transparent:true,opacity:.3}))); });
+  const palette=[0xf5c542,0x34d399,0x22d3ee,0xa78bfa,0xfb923c,0xf472b6];
+  nodes.forEach(n=>{ const isP=n.type==='paper';
+    const color=isP?palette[(n.detail&&n.detail.id?n.detail.id.charCodeAt(1):0)%palette.length]:0x22d3ee;
+    const size=isP?1.8:1.15;
+    const mesh=new THREE.Mesh(new THREE.SphereGeometry(size,32,32),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.5,metalness:.3,roughness:.35}));
+    mesh.position.set(...n.pos); mesh.userData={...n,baseEmissive:.5};
+    mesh.add(new THREE.Mesh(new THREE.SphereGeometry(size*1.7,16,16),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.12})));
+    graphGroup.add(mesh); nodeMeshes.push(mesh); });
+}
+function rebuildGraph(){ clearGraph(); populateGraph(); }
+function initGraph(){
+  const canvas=document.getElementById('graph-canvas'), parent=canvas.parentElement;
+  const w=parent.clientWidth,h=parent.clientHeight;
+  scene=new THREE.Scene(); scene.fog=new THREE.FogExp2(0x060a16,.012);
+  camera=new THREE.PerspectiveCamera(55,w/h,.1,1000); camera.position.set(0,4,46);
+  renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(w,h,false);
+  scene.add(new THREE.AmbientLight(0xffffff,.6));
+  const d=new THREE.DirectionalLight(0x9fd8ff,1); d.position.set(10,20,30); scene.add(d);
+  const pt=new THREE.PointLight(0x22d3ee,1.2,140); pt.position.set(-20,10,20); scene.add(pt);
+  // starfield
+  const sg=new THREE.BufferGeometry(), N=900, arr=[];
+  for(let i=0;i<N;i++) arr.push((Math.random()-.5)*300,(Math.random()-.5)*300,(Math.random()-.5)*300);
+  sg.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));
+  stars=new THREE.Points(sg,new THREE.PointsMaterial({color:0x9fb3d1,size:.6,transparent:true,opacity:.7})); scene.add(stars);
+  controls=new THREE.OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.08; controls.minDistance=16; controls.maxDistance=90;
+  graphGroup=new THREE.Group(); scene.add(graphGroup);
+  raycaster=new THREE.Raycaster(); mouse=new THREE.Vector2();
+  populateGraph(); bindGraph(canvas); animate(); window.addEventListener('resize',onResize);
+}
+function onResize(){ const p=document.getElementById('graph-canvas').parentElement; if(!p.clientWidth)return; camera.aspect=p.clientWidth/p.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(p.clientWidth,p.clientHeight,false); }
+function setMouse(e,c){ const r=c.getBoundingClientRect(); mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1; }
+function bindGraph(canvas){
+  const tip=document.getElementById('tooltip');
+  canvas.addEventListener('mousemove',e=>{ setMouse(e,canvas); raycaster.setFromCamera(mouse,camera); const h=raycaster.intersectObjects(nodeMeshes,false);
+    if(h.length){ tip.style.display='block'; tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY+14)+'px'; tip.textContent=h[0].object.userData.label; canvas.style.cursor='pointer'; }
+    else{ tip.style.display='none'; canvas.style.cursor=''; } });
+  canvas.addEventListener('mouseleave',()=>tip.style.display='none');
+  canvas.addEventListener('click',e=>{ setMouse(e,canvas); raycaster.setFromCamera(mouse,camera); const h=raycaster.intersectObjects(nodeMeshes,false); if(h.length) selectNode(h[0].object); });
+}
+function selectNode(mesh){
+  if(selected&&selected.material){ selected.material.emissiveIntensity=selected.userData.baseEmissive; selected.scale.set(1,1,1); }
+  selected=mesh; mesh.material.emissiveIntensity=1.5; mesh.scale.set(1.5,1.5,1.5);
+  const u=mesh.userData;
+  if(u.type==='paper') showDetail(u.detail);
+  else{ // method node
+    document.getElementById('detail-empty').classList.add('hidden');
+    const el=document.getElementById('detail-content'); el.classList.remove('hidden');
+    const used=u.detail.usedBy.map(id=>{const p=PAPERS.find(x=>x.id===id);return p?`[${p.author} et al., ${p.year}]`:id;}).join(', ');
+    el.innerHTML=`<span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-node/20 text-cyan-node">ระเบียบวิธีวิจัย</span>
+      <h3 class="text-sm font-bold text-cyan-node mt-3 mb-3">${u.label}</h3>
+      <p class="text-[11px] text-cyan-300/80 mb-1">เชื่อมโยงกับงานวิจัย:</p><p class="text-[11px] text-cyan-50/90">${used}</p>`;
+  }
+}
+function highlightNodeById(id){ const m=nodeMeshes.find(x=>x.userData.key===id); if(m) selectNode(m); }
+function animate(){ requestAnimationFrame(animate); if(controls)controls.update(); if(graphGroup)graphGroup.rotation.y+=.0006; if(stars)stars.rotation.y+=.0002; renderer.render(scene,camera); }
+
+/* ========================= Misc ========================= */
+function refreshAll(){ renderDomains(); renderMatrix(); renderDraft(); rebuildGraph(); }
+async function copyText(t,btn,done){ try{ await navigator.clipboard.writeText(t); if(btn){const o=btn.textContent;btn.textContent=done;setTimeout(()=>btn.textContent=o,1400);} }catch{ if(btn)btn.textContent='คัดลอกไม่สำเร็จ'; } }
+function openModal(){ renderAPA(); const m=document.getElementById('apa-modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
+function closeModal(){ const m=document.getElementById('apa-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+function switchTab(which){
+  const views={explorer:'view-explorer',catalog:'view-catalog',dashboard:'view-dashboard'};
+  const tabs={explorer:'tab-explorer',catalog:'tab-catalog',dashboard:'tab-dashboard'};
+  Object.entries(views).forEach(([k,id])=>document.getElementById(id).classList.toggle('hidden',k!==which));
+  Object.entries(tabs).forEach(([k,id])=>{ const el=document.getElementById(id);
+    if(k===which){ el.classList.add('tab-active'); el.classList.remove('glass','text-cyan-100'); }
+    else{ el.classList.remove('tab-active'); el.classList.add('glass','text-cyan-100'); } });
+  if(which==='explorer') setTimeout(onResize,50);
+  if(which==='dashboard') renderDashboard();
+}
+
+/* ========================= Login + Usage statistics ========================= */
+const ROLE_META={ 'อาจารย์':{color:'#f5c542',icon:'👩‍🏫'}, 'เจ้าหน้าที่':{color:'#22d3ee',icon:'🧑‍💼'}, 'นักศึกษา':{color:'#34d399',icon:'🧑‍🎓'} };
+let selectedRole=null, currentUser=null;
+const LS_LOG='lika_usage_log', LS_USER='lika_current_user';
+
+function loadLog(){ try{ return JSON.parse(localStorage.getItem(LS_LOG)||'[]'); }catch{ return []; } }
+function saveLog(log){ localStorage.setItem(LS_LOG, JSON.stringify(log)); }
+
+function openLogin(){
+  const m=document.getElementById('login-modal'); m.classList.remove('hidden'); m.classList.add('flex');
+  document.getElementById('logout-btn').classList.toggle('hidden', !currentUser);
+}
+function closeLogin(){ const m=document.getElementById('login-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+function doLogin(){
+  const hint=document.getElementById('login-hint');
+  if(!selectedRole){ hint.textContent='กรุณาเลือกประเภทผู้ใช้ก่อน'; return; }
+  const name=document.getElementById('login-name').value.trim();
+  const entry={ role:selectedRole, name:name||'(ไม่ระบุ)', ts:Date.now() };
+  const log=loadLog(); log.push(entry); saveLog(log);
+  currentUser={ role:selectedRole, name:entry.name };
+  localStorage.setItem(LS_USER, JSON.stringify(currentUser));
+  updateUserChip(); closeLogin(); renderDashboard();
+  document.getElementById('agent-latency'); // noop
+}
+function doLogout(){ currentUser=null; localStorage.removeItem(LS_USER); updateUserChip(); closeLogin(); }
+
+function updateUserChip(){
+  const av=document.getElementById('user-avatar'), lb=document.getElementById('user-label');
+  if(currentUser){ const meta=ROLE_META[currentUser.role]||{icon:'•'}; av.textContent=meta.icon; av.style.background='transparent';
+    lb.textContent=`${currentUser.role}${currentUser.name&&currentUser.name!=='(ไม่ระบุ)'?' · '+currentUser.name:''}`; }
+  else { av.textContent='?'; lb.textContent='เข้าสู่ระบบ'; }
+}
+
+function renderStatCards(log){
+  const byRole={}; Object.keys(ROLE_META).forEach(r=>byRole[r]=0);
+  log.forEach(e=>{ if(byRole[e.role]!=null) byRole[e.role]++; });
+  const total=log.length;
+  const cards=[['รวมทั้งหมด',total,'#f5c542','📈'],
+    ['อาจารย์',byRole['อาจารย์'],ROLE_META['อาจารย์'].color,'👩‍🏫'],
+    ['เจ้าหน้าที่',byRole['เจ้าหน้าที่'],ROLE_META['เจ้าหน้าที่'].color,'🧑‍💼'],
+    ['นักศึกษา',byRole['นักศึกษา'],ROLE_META['นักศึกษา'].color,'🧑‍🎓']];
+  document.getElementById('stat-cards').innerHTML=cards.map(([l,v,c,ic])=>`
+    <div class="glass rounded-xl p-4">
+      <div class="flex items-center justify-between mb-1"><span class="text-xl">${ic}</span>
+        <span class="h-2.5 w-2.5 rounded-full" style="background:${c};box-shadow:0 0 8px ${c}"></span></div>
+      <div class="text-2xl font-bold" style="color:${c}">${v}</div>
+      <div class="text-[11px] text-cyan-200/60">${l}</div>
+    </div>`).join('');
+  return byRole;
+}
+
+function renderDonut(byRole){
+  const total=Object.values(byRole).reduce((a,b)=>a+b,0);
+  const svg=document.getElementById('donut'), leg=document.getElementById('donut-legend');
+  if(!total){ svg.innerHTML='<circle cx="60" cy="60" r="46" fill="none" stroke="#1e293b" stroke-width="14"/>';
+    leg.innerHTML='<p class="text-cyan-200/50">ยังไม่มีข้อมูล</p>'; return; }
+  let off=0, parts='', C=2*Math.PI*46;
+  leg.innerHTML='';
+  Object.entries(byRole).forEach(([role,v])=>{
+    if(!v) return; const frac=v/total, len=frac*C; const meta=ROLE_META[role];
+    parts+=`<circle cx="60" cy="60" r="46" fill="none" stroke="${meta.color}" stroke-width="14"
+      stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`;
+    off+=len;
+    leg.innerHTML+=`<div class="flex items-center justify-between"><span class="inline-flex items-center gap-1.5">
+      <span class="h-2.5 w-2.5 rounded-full" style="background:${meta.color}"></span>${meta.icon} ${role}</span>
+      <span class="font-semibold" style="color:${meta.color}">${v} · ${Math.round(frac*100)}%</span></div>`;
+  });
+  svg.innerHTML=`<circle cx="60" cy="60" r="46" fill="none" stroke="#131c2e" stroke-width="14"/>${parts}
+    <text x="60" y="56" text-anchor="middle" fill="#e5edff" font-size="18" font-weight="bold">${total}</text>
+    <text x="60" y="72" text-anchor="middle" fill="#9fb3d1" font-size="8">ครั้ง</text>`;
+}
+
+function renderBar(log){
+  const days=[]; const now=new Date();
+  for(let i=6;i>=0;i--){ const d=new Date(now); d.setDate(now.getDate()-i); d.setHours(0,0,0,0); days.push(d); }
+  const counts=days.map(d=>{ const next=d.getTime()+86400000;
+    return log.filter(e=>e.ts>=d.getTime()&&e.ts<next).length; });
+  const max=Math.max(1,...counts);
+  const names=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  document.getElementById('bar-chart').innerHTML=days.map((d,i)=>{
+    const h=Math.round((counts[i]/max)*100);
+    return `<div class="flex flex-col items-center gap-1 flex-1">
+      <span class="text-[9px] text-cyan-200/70">${counts[i]||''}</span>
+      <div class="w-full rounded-t" style="height:${Math.max(h,4)}%;background:linear-gradient(180deg,#f5c542,#22d3ee);min-height:4px"></div>
+      <span class="text-[9px] text-cyan-200/50">${names[d.getDay()]}</span></div>`;
+  }).join('');
+}
+
+function renderLog(log){
+  const rows=[...log].reverse().slice(0,12);
+  document.getElementById('log-body').innerHTML=rows.length? rows.map(e=>{
+    const dt=new Date(e.ts); const meta=ROLE_META[e.role]||{color:'#9fb3d1',icon:'•'};
+    const ts=dt.toLocaleString('th-TH',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<tr class="hover:bg-white/5"><td class="p-2 text-cyan-200/70">${ts}</td>
+      <td class="p-2"><span class="inline-flex items-center gap-1" style="color:${meta.color}">${meta.icon} ${e.role}</span></td>
+      <td class="p-2 text-cyan-50/90">${e.name}</td></tr>`;
+  }).join('') : '<tr><td colspan="3" class="p-3 text-cyan-200/40">ยังไม่มีบันทึกการเข้าใช้</td></tr>';
+}
+
+function renderDashboard(){
+  const log=loadLog();
+  const byRole=renderStatCards(log);
+  renderDonut(byRole); renderBar(log); renderLog(log);
+}
+
+/* ========================= Init ========================= */
+window.addEventListener('DOMContentLoaded',()=>{
+  // hot chips
+  document.getElementById('hot-chips').innerHTML=HOT.map((h,i)=>{ const c=['bg-emerald-500/20 text-emerald-300','bg-gold/20 text-gold','bg-cyan-node/20 text-cyan-node','bg-orange-500/20 text-orange-300','bg-purple-500/20 text-purple-300','bg-pink-500/20 text-pink-300'][i%6];
+    return `<button class="hot chip text-[10px] px-2 py-1 rounded-full ${c}" data-q="${h}">${h}</button>`; }).join('');
+  document.querySelectorAll('.hot').forEach(b=>b.addEventListener('click',()=>{ document.getElementById('search-input').value=b.dataset.q; filterText=b.dataset.q; refreshAll(); }));
+
+  initGraph();
+  loadSamples(); // โหลดตัวอย่างให้เห็นงานทันที (เหมือนภาพ)
+
+  document.getElementById('search-form').addEventListener('submit',e=>{ e.preventDefault(); filterText=document.getElementById('search-input').value.trim(); refreshAll(); });
+  document.getElementById('search-input').addEventListener('input',e=>{ filterText=e.target.value.trim(); refreshAll(); });
+  document.getElementById('search-clear').addEventListener('click',()=>{ document.getElementById('search-input').value=''; filterText=''; refreshAll(); });
+
+  document.getElementById('tab-explorer').addEventListener('click',()=>switchTab('explorer'));
+  document.getElementById('tab-catalog').addEventListener('click',()=>switchTab('catalog'));
+  document.getElementById('tab-dashboard').addEventListener('click',()=>switchTab('dashboard'));
+
+  // --- Login / usage stats ---
+  try{ currentUser=JSON.parse(localStorage.getItem(LS_USER)||'null'); }catch{ currentUser=null; }
+  updateUserChip();
+  document.getElementById('user-chip').addEventListener('click',openLogin);
+  document.getElementById('login-close').addEventListener('click',closeLogin);
+  document.getElementById('login-modal').addEventListener('click',e=>{ if(e.target.id==='login-modal') closeLogin(); });
+  document.querySelectorAll('.role-btn').forEach(b=>b.addEventListener('click',()=>{
+    selectedRole=b.dataset.role;
+    document.querySelectorAll('.role-btn').forEach(x=>{ x.classList.remove('border-gold','bg-gold/10'); });
+    b.classList.add('border-gold','bg-gold/10');
+    document.getElementById('login-hint').textContent='';
+  }));
+  document.getElementById('login-submit').addEventListener('click',doLogin);
+  document.getElementById('login-name').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+  document.getElementById('logout-btn').addEventListener('click',doLogout);
+  document.getElementById('login-skip').addEventListener('click',closeLogin);
+  document.getElementById('btn-reset-stats').addEventListener('click',()=>{
+    if(confirm('ยืนยันการล้างสถิติการเข้าใช้ทั้งหมดในเครื่องนี้?')){ saveLog([]); renderDashboard(); }
+  });
+  document.getElementById('reset-view').addEventListener('click',()=>{ camera.position.set(0,4,46); controls.target.set(0,0,0); });
+
+  const input=document.getElementById('file-input'), dz=document.getElementById('dz');
+  input.addEventListener('change',e=>{ if(e.target.files.length) handleFiles(e.target.files); input.value=''; });
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
+  dz.addEventListener('drop',e=>{ if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+  document.getElementById('btn-sample').addEventListener('click',loadSamples);
+  document.getElementById('btn-clear').addEventListener('click',()=>{ PAPERS=[]; document.getElementById('ingest-status').textContent='ล้างแล้ว'; refreshAll(); });
+  document.getElementById('btn-regenerate').addEventListener('click',renderDraft);
+  document.getElementById('btn-copy').addEventListener('click',e=>copyText(document.getElementById('draft').innerText,e.target,'คัดลอกแล้ว ✓'));
+  document.getElementById('btn-apa').addEventListener('click',openModal);
+  document.getElementById('apa-close').addEventListener('click',closeModal);
+  document.getElementById('apa-modal').addEventListener('click',e=>{ if(e.target.id==='apa-modal') closeModal(); });
+  document.getElementById('apa-copy').addEventListener('click',e=>copyText(document.getElementById('apa-output').textContent,e.target,'คัดลอกแล้ว ✓'));
+
+  // Kiro agent latency flavor
+  let ms=38; setInterval(()=>{ ms=30+Math.floor(Math.random()*25); document.getElementById('agent-latency').textContent=`Active (${ms}ms)`; },2600);
+
+  // เด้งหน้าต่างเข้าสู่ระบบอัตโนมัติเมื่อเปิดเว็บ (ถ้ายังไม่ได้เข้าสู่ระบบ)
+  if(!currentUser){ setTimeout(openLogin, 400); }
+});
+</script>
+</body>
+</html>
