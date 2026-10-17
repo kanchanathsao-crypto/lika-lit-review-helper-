@@ -289,11 +289,12 @@ function analyzePaper(rawText, filename){
   return { id:'U'+(++seq), source:'upload', filename, title, author, authorsFull, year,
     advisor:'—', program:'นำเข้าจากไฟล์', marc:'—', keywords:[],
     field:guessField(clean),
-    objective:sectionSnippet(clean,['objective','aim','purpose','goal','วัตถุประสงค์','เป้าหมาย'],'ไม่พบวัตถุประสงค์ชัดเจน'),
-    dataset:sectionSnippet(clean,['dataset','participants','sample','subjects','n =','กลุ่มตัวอย่าง','ชุดข้อมูล','ประชากร'],'ไม่ระบุชุดข้อมูล'),
-    method:sectionSnippet(clean,['method','methodology','materials and methods','experimental','procedure','ระเบียบวิธี','วิธีการวิจัย','วิธีดำเนินการ'],'ไม่พบส่วนระเบียบวิธี'),
-    findings:sectionSnippet(clean,['results','findings','we found','showed that','ผลการศึกษา','ผลการวิจัย','ผลลัพธ์'],'ไม่พบผลการศึกษา'),
-    limitation:sectionSnippet(clean,['limitation','constraint','future work','ข้อจำกัด','ข้อเสนอแนะ'],'ไม่ระบุข้อจำกัด'),
+    // คำค้นภาษาไทยมาก่อน (TH-first) เพื่อให้ดึงเนื้อหาภาษาไทยเป็นหลัก ตามด้วย fallback อังกฤษ
+    objective:sectionSnippet(clean,['วัตถุประสงค์','ความมุ่งหมาย','เป้าหมายของการวิจัย','เป้าหมาย'],['objective','aim','purpose','goal'],'ไม่พบวัตถุประสงค์ชัดเจน'),
+    dataset:sectionSnippet(clean,['กลุ่มตัวอย่าง','กลุ่มเป้าหมาย','ประชากรและกลุ่มตัวอย่าง','ประชากร','ชุดข้อมูล'],['dataset','participants','sample','subjects','n ='],'ไม่ระบุชุดข้อมูล'),
+    method:sectionSnippet(clean,['ระเบียบวิธีวิจัย','วิธีดำเนินการวิจัย','วิธีการวิจัย','ระเบียบวิธี','วิธีดำเนินการ'],['methodology','materials and methods','method','experimental','procedure'],'ไม่พบส่วนระเบียบวิธี'),
+    findings:sectionSnippet(clean,['ผลการวิจัย','ผลการศึกษา','สรุปผลการวิจัย','ผลการทดลอง','ผลลัพธ์'],['results','findings','we found','showed that'],'ไม่พบผลการศึกษา'),
+    limitation:sectionSnippet(clean,['ข้อจำกัด','ข้อจำกัดของการวิจัย','ข้อเสนอแนะ','ขอบเขตของการวิจัย'],['limitation','constraint','future work'],'ไม่ระบุข้อจำกัด'),
     methodology:guessMethodology(clean) };
 }
 function guessTitle(text,filename){
@@ -305,13 +306,50 @@ function guessAuthorYear(text,filename){
   let year=new Date().getFullYear();
   const ym=text.match(/\b(19|20)\d{2}\b/), be=text.match(/\b(25[0-9]{2})\b/);
   if(ym) year=+ym[0]; else if(be) year=+be[0]-543;
-  const STOP=/^(The|This|Study|Review|Systematic|Effect|Effectiveness|Analysis|Development|Assessment|Impact|Low|High|Dose|Using|Toward|Towards|Abstract|Research|Article|Journal)$/i;
-  let author='Unknown';
-  const m1=text.match(/\b([A-Z][a-z]{2,})\s*,\s*(?:[A-Z]\.\s*){1,3}/); if(m1&&!STOP.test(m1[1])) author=m1[1];
-  if(author==='Unknown'){ const m2=text.match(/\b([A-Z][a-z]{2,})\b[^.\n]{0,40}?\b(?:19|20)\d{2}\b/); if(m2&&!STOP.test(m2[1])) author=m2[1]; }
-  if(author==='Unknown'){ const m3=text.match(/([\u0E00-\u0E7F]{2,})\s+[\u0E00-\u0E7F]{2,}\s*25[0-9]{2}/); if(m3) author=m3[1]; }
-  if(author==='Unknown'){ const fn=filename.replace(/\.[^.]+$/,'').match(/[A-Za-z\u0E00-\u0E7F]{3,}/); if(fn&&!STOP.test(fn[0])) author=fn[0]; }
-  return { author, authorsFull: author==='Unknown'?'Unknown Author':`${author} et al.`, year };
+
+  // คำที่ไม่ใช่ชื่อคน (สถาบัน/หน่วยงาน/หัวข้อ) — กันพลาดแบบ "Naresuan University"
+  const BAD=/(universit|college|faculty|department|institute|school|library|press|journal|proceeding|conference|มหาวิทยาลัย|คณะ|ภาควิชา|สถาบัน|ห้องสมุด|สำนัก|วิทยาลัย|วารสาร)/i;
+  const STOP=/^(The|This|Study|Review|Systematic|Effect|Effectiveness|Analysis|Development|Assessment|Impact|Low|High|Dose|Using|Toward|Towards|Abstract|Research|Article|Journal|And|With|From|Among)$/i;
+
+  let author='Unknown', authorsFull='';
+
+  // 1) ป้ายชื่อผู้แต่งภาษาไทยแบบชัดเจน: "โดย นายสมชาย ใจดี" / "ผู้วิจัย: นางสาว..."
+  const thLabel=text.match(/(?:โดย|ผู้วิจัย|ผู้จัดทำ|ผู้เขียน|จัดทำโดย)\s*[:：]?\s*((?:นาย|นาง|นางสาว|น\.ส\.|ดร\.|ผศ\.|รศ\.|ศ\.)?[\u0E00-\u0E7F]{2,}\s+[\u0E00-\u0E7F]{2,}(?:\s*(?:,|และ)\s*(?:นาย|นาง|นางสาว|น\.ส\.)?[\u0E00-\u0E7F]{2,}\s+[\u0E00-\u0E7F]{2,}){0,3})/);
+  if(thLabel){
+    authorsFull=thLabel[1].replace(/\s+/g,' ').trim();
+    const firstName=authorsFull.replace(/^(นาย|นาง|นางสาว|น\.ส\.|ดร\.|ผศ\.|รศ\.|ศ\.)\s*/,'').split(/\s+/)[0];
+    author=firstName||authorsFull.split(/\s+/)[0];
+  }
+
+  // 2) รูปแบบผู้แต่งอังกฤษ "Family, I." / "Family, I. I." (ข้ามถ้าเป็นสถาบัน)
+  if(author==='Unknown'){
+    const re=/\b([A-Z][a-z]{2,})\s*,\s*((?:[A-Z]\.\s*){1,3})/g; let m;
+    while((m=re.exec(text))){
+      const ctx=text.slice(Math.max(0,m.index-25), m.index+40);
+      if(STOP.test(m[1])||BAD.test(ctx)) continue;
+      author=m[1]; authorsFull=`${m[1]}, ${m[2].trim()}`; break;
+    }
+  }
+
+  // 3) ชื่อไทยติดกับปี พ.ศ. (ต้องไม่ใช่สถาบัน)
+  if(author==='Unknown'){
+    const m3=text.match(/((?:นาย|นาง|นางสาว|น\.ส\.)?[\u0E00-\u0E7F]{2,}\s+[\u0E00-\u0E7F]{2,})\s*,?\s*25[0-9]{2}/);
+    if(m3 && !BAD.test(m3[1])){ authorsFull=m3[1].trim(); author=authorsFull.replace(/^(นาย|นาง|นางสาว|น\.ส\.)\s*/,'').split(/\s+/)[0]; }
+  }
+
+  // 4) ชื่ออังกฤษใกล้ปี (ข้ามสถาบัน)
+  if(author==='Unknown'){
+    const re=/\b([A-Z][a-z]{2,})\b[^.\n]{0,40}?\b(?:19|20)\d{2}\b/g; let m;
+    while((m=re.exec(text))){ const ctx=text.slice(Math.max(0,m.index-25),m.index+30);
+      if(STOP.test(m[1])||BAD.test(ctx)) continue; author=m[1]; authorsFull=`${m[1]} et al.`; break; }
+  }
+
+  // 5) fallback: ชื่อไฟล์
+  if(author==='Unknown'){ const fn=filename.replace(/\.[^.]+$/,'').match(/[A-Za-z\u0E00-\u0E7F]{3,}/); if(fn&&!STOP.test(fn[0])){ author=fn[0]; authorsFull=fn[0]; } }
+
+  if(author==='Unknown'){ author='Unknown'; authorsFull='Unknown Author'; }
+  else if(!authorsFull) authorsFull=`${author} et al.`;
+  return { author, authorsFull, year };
 }
 function guessField(text){
   const t=text.toLowerCase();
@@ -372,11 +410,59 @@ function guessMethodology(text){
   let best=null,bs=0; for(const[l,kw]of pat){const sc=kw.reduce((s,k)=>s+(t.includes(k)?1:0),0); if(sc>bs){bs=sc;best=l;}}
   return best||'ระเบียบวิธีอื่น ๆ';
 }
-function sectionSnippet(text,keywords,fb){
+function sectionSnippet(text,thKeywords,enKeywords,fb){
   const lw=text.toLowerCase();
-  for(const kw of keywords){ const i=lw.indexOf(kw.toLowerCase()); if(i!==-1){ const sn=text.slice(i,i+260).trim().replace(/\s+/g,' '); return sn.length>230?sn.slice(0,230).replace(/\s\S*$/,'')+'…':sn; } }
+  // หัวข้ออื่น ๆ ที่ใช้เป็น "จุดตัด" ไม่ให้ snippet ลามข้ามหัวข้อ
+  const SECTION_STOPS=['วัตถุประสงค์','ความมุ่งหมาย','สมมติฐาน','กลุ่มตัวอย่าง','กลุ่มเป้าหมาย','ประชากร','ชุดข้อมูล','ขอบเขต','ระเบียบวิธีวิจัย','วิธีดำเนินการวิจัย','วิธีการวิจัย','ระเบียบวิธี','วิธีดำเนินการ','เครื่องมือ','ผลการวิจัย','ผลการศึกษา','สรุปผลการวิจัย','ผลการทดลอง','อภิปรายผล','ข้อจำกัด','ข้อเสนอแนะ','กิตติกรรมประกาศ','บรรณานุกรม','เอกสารอ้างอิง'];
+  function cutAtNextSection(s, selfKw){
+    let end=s.length;
+    for(const st of SECTION_STOPS){
+      if(st===selfKw) continue;
+      const p=s.indexOf(st);
+      if(p>8 && p<end) end=p;   // >8 กันตัดทันทีถ้าหัวข้อซ้ำ
+    }
+    return s.slice(0,end).trim();
+  }
+  // 1) ลองคำค้นภาษาไทยก่อน แล้วดึง "เฉพาะช่วงภาษาไทย" ใต้หัวข้อนั้น (ตัดก่อนถึงหัวข้อถัดไป)
+  for(const kw of thKeywords){
+    const i=text.indexOf(kw);
+    if(i!==-1){
+      let rest=text.slice(i+kw.length).replace(/^[\s:：.\-–—)\]๐-๙\d.]+/,'');
+      rest=cutAtNextSection(rest, kw);
+      const th=extractThaiRun(rest);
+      if(th && th.length>=12) return clampLen(th);
+      const sn=rest.slice(0,260).replace(/\s+/g,' ').trim();
+      if(sn && sn.length>=8) return clampLen(sn);
+    }
+  }
+  // 2) ถ้าไม่พบหัวข้อไทย ลองหา "ย่อหน้าไทย" ที่มีคำค้นอังกฤษใกล้ ๆ → คืนช่วงไทยแทน
+  for(const kw of enKeywords){
+    const i=lw.indexOf(kw.toLowerCase());
+    if(i!==-1){
+      const around=text.slice(Math.max(0,i-40), i+400);
+      const th=extractThaiRun(around);
+      if(th && th.length>=20) return clampLen(th);  // ให้ความสำคัญกับไทยก่อน
+      const sn=text.slice(i,i+260).replace(/\s+/g,' ').trim();
+      return clampLen(sn);
+    }
+  }
   return fb;
 }
+// ดึงประโยคภาษาไทย โดยยอมให้มีคำอังกฤษ/ตัวย่อ/ตัวเลขแทรกในประโยคได้ (เช่น RCBD, Shannon-Wiener)
+// เลือก "รันแรก" ที่ยาวพอ เพื่อไม่ให้ข้ามประโยคต้นไป
+function extractThaiRun(s){
+  // อนุญาต: อักษรไทย + ช่องว่าง + เลข + เครื่องหมาย + คำอังกฤษสั้น ๆ ที่แทรกกลาง
+  const re=/[\u0E00-\u0E7F][\u0E00-\u0E7F0-9๐-๙\s.,()%/\-–:]*(?:[A-Za-z0-9][A-Za-z0-9.\-]*\s*[\u0E00-\u0E7F0-9๐-๙\s.,()%/\-–:]*)*/g;
+  const matches=s.match(re);
+  if(!matches) return '';
+  // เลือกรันแรกที่มีอักษรไทยพอสมควร (>=12 ตัวอักษรไทย)
+  for(const m of matches){
+    const thaiCount=(m.match(/[\u0E00-\u0E7F]/g)||[]).length;
+    if(thaiCount>=12) return m.trim();
+  }
+  return matches.sort((a,b)=>b.length-a.length)[0].trim();
+}
+function clampLen(s){ s=s.replace(/\s+/g,' ').trim(); return s.length>230 ? s.slice(0,230).replace(/\s\S*$/,'')+'…' : s; }
 
 /* ========================= Samples ========================= */
 function loadSamples(){ SAMPLES.forEach(s=>PAPERS.push({...s,id:'S'+(++seq),source:'sample'})); document.getElementById('ingest-status').textContent=`โหลดตัวอย่าง ${SAMPLES.length} ฉบับ`; refreshAll(); }
